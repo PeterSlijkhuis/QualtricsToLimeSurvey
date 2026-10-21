@@ -61,7 +61,7 @@ test('unconvertible parts are listed with a fix and options, and block the outpu
   const r = convert(blocked);
   assert.equal(r.lss, '');
   assert.equal(r.problems.length, 2);
-  assert.ok(r.problems.every(p => p.id && p.where && p.issue && p.fix && p.options.length));
+  assert.ok(r.problems.every(p => p.id && p.where && p.issue && p.qualtrics && p.why && p.fix && p.options.length && p.options.every(o => o.label && o.impact)));
 });
 
 test('chosen options resolve problems, and edits change the output', () => {
