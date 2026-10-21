@@ -1,0 +1,460 @@
+{
+ "SurveyEntry": {
+  "SurveyID": "SV_test_clean",
+  "SurveyName": "Test 1 - Fully convertible (customer satisfaction)",
+  "SurveyLanguage": "EN",
+  "SurveyStatus": "Inactive"
+ },
+ "SurveyElements": [
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "BL",
+   "PrimaryAttribute": "Survey Blocks",
+   "Payload": [
+    {
+     "Type": "Standard",
+     "ID": "BL_1",
+     "Description": "About you",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID1"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID2"
+      },
+      {
+       "Type": "Page Break"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID3"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID4"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "ID": "BL_2",
+     "Description": "Your visit",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID5"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID6"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID7"
+      },
+      {
+       "Type": "Page Break"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID8"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "ID": "BL_3",
+     "Description": "Thank you",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID9"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "FL",
+   "PrimaryAttribute": "Survey Flow",
+   "Payload": {
+    "Type": "Root",
+    "FlowID": "FL_1",
+    "Flow": [
+     {
+      "Type": "EmbeddedData",
+      "FlowID": "FL_2",
+      "EmbeddedData": [
+       {
+        "Description": "source",
+        "Type": "Custom",
+        "Field": "source",
+        "VariableType": "String",
+        "Value": "newsletter"
+       }
+      ]
+     },
+     {
+      "Type": "Standard",
+      "ID": "BL_1",
+      "FlowID": "FL_3"
+     },
+     {
+      "Type": "Branch",
+      "FlowID": "FL_4",
+      "Description": "Visited the shop",
+      "BranchLogic": {
+       "0": {
+        "0": {
+         "LogicType": "Question",
+         "QuestionID": "QID3",
+         "QuestionIsInLoop": "no",
+         "ChoiceLocator": "q://QID3/SelectableChoice/1",
+         "Operator": "Selected",
+         "QuestionIDFromLocator": "QID3",
+         "LeftOperand": "q://QID3/SelectableChoice/1",
+         "Type": "Expression"
+        },
+        "Type": "If"
+       },
+       "Type": "BooleanExpression"
+      },
+      "Flow": [
+       {
+        "Type": "Standard",
+        "ID": "BL_2",
+        "FlowID": "FL_5"
+       }
+      ]
+     },
+     {
+      "Type": "Standard",
+      "ID": "BL_3",
+      "FlowID": "FL_6"
+     }
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "SO",
+   "PrimaryAttribute": "Survey Options",
+   "Payload": {
+    "BackButton": "true",
+    "ProgressBarDisplay": "Text",
+    "SurveyProtection": "PublicSurvey"
+   }
+  },
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID1",
+   "Payload": {
+    "QuestionDescription": "What is your gender?",
+    "QuestionID": "QID1",
+    "DataExportTag": "gender",
+    "QuestionText": "What is your gender?",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Woman"
+     },
+     "2": {
+      "Display": "Man"
+     },
+     "3": {
+      "Display": "Other"
+     },
+     "4": {
+      "Display": "Prefer not to say"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID2",
+   "Payload": {
+    "QuestionDescription": "How old are you?",
+    "QuestionID": "QID2",
+    "DataExportTag": "age",
+    "QuestionText": "How old are you?",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "ON",
+      "Type": "ContentType",
+      "ContentType": "ValidNumber",
+      "ValidNumber": {
+       "Min": "16",
+       "Max": "110",
+       "NumDecimals": "0"
+      }
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID3",
+   "Payload": {
+    "QuestionDescription": "Did you visit our shop in the last month?",
+    "QuestionID": "QID3",
+    "DataExportTag": "visited",
+    "QuestionText": "Did you visit our shop in the last month?",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Yes"
+     },
+     "2": {
+      "Display": "No"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2"
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID4",
+   "Payload": {
+    "QuestionDescription": "Your email address (optional)",
+    "QuestionID": "QID4",
+    "DataExportTag": "email",
+    "QuestionText": "Your email address (optional)",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "ContentType",
+      "ContentType": "ValidEmail"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID5",
+   "Payload": {
+    "QuestionDescription": "How satisfied were you with:",
+    "QuestionID": "QID5",
+    "DataExportTag": "rating",
+    "QuestionText": "How satisfied were you with:",
+    "QuestionType": "Matrix",
+    "Selector": "Likert",
+    "SubSelector": "SingleAnswer",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Staff"
+     },
+     "2": {
+      "Display": "Prices"
+     },
+     "3": {
+      "Display": "Choice"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3"
+    ],
+    "Answers": {
+     "1": {
+      "Display": "Very unsatisfied"
+     },
+     "2": {
+      "Display": "Unsatisfied"
+     },
+     "3": {
+      "Display": "Neutral"
+     },
+     "4": {
+      "Display": "Satisfied"
+     },
+     "5": {
+      "Display": "Very satisfied"
+     }
+    },
+    "AnswerOrder": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID6",
+   "Payload": {
+    "QuestionDescription": "What did you buy?",
+    "QuestionID": "QID6",
+    "DataExportTag": "bought",
+    "QuestionText": "What did you buy?",
+    "QuestionType": "MC",
+    "Selector": "MAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Food"
+     },
+     "2": {
+      "Display": "Clothes"
+     },
+     "3": {
+      "Display": "Books"
+     },
+     "4": {
+      "Display": "Nothing"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID7",
+   "Payload": {
+    "QuestionDescription": "Why did you not buy anything?",
+    "QuestionID": "QID7",
+    "DataExportTag": "why_nothing",
+    "QuestionText": "Why did you not buy anything?",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "DisplayLogic": {
+     "0": {
+      "0": {
+       "LogicType": "Question",
+       "QuestionID": "QID6",
+       "QuestionIsInLoop": "no",
+       "ChoiceLocator": "q://QID6/SelectableChoice/4",
+       "Operator": "Selected",
+       "QuestionIDFromLocator": "QID6",
+       "LeftOperand": "q://QID6/SelectableChoice/4",
+       "Type": "Expression"
+      },
+      "Type": "If"
+     },
+     "Type": "BooleanExpression"
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID8",
+   "Payload": {
+    "QuestionDescription": "Anything else you want to tell us about your visit to the shop (you chose ${q://QID6/ChoiceGroup/SelectedChoices})?",
+    "QuestionID": "QID8",
+    "DataExportTag": "comments",
+    "QuestionText": "Anything else you want to tell us about your visit to the shop (you chose ${q://QID6/ChoiceGroup/SelectedChoices})?",
+    "QuestionType": "TE",
+    "Selector": "ML",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_clean",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID9",
+   "Payload": {
+    "QuestionDescription": "Thank you for your time. You came to us via ${e://Field/source}.",
+    "QuestionID": "QID9",
+    "DataExportTag": "thanks",
+    "QuestionText": "Thank you for your time. You came to us via ${e://Field/source}.",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  }
+ ]
+}

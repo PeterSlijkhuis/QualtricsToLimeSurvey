@@ -1,0 +1,138 @@
+{
+ "SurveyEntry": {
+  "SurveyID": "SV_test_broken",
+  "SurveyName": "Test 4 - Must fix in Qualtrics (damaged export)",
+  "SurveyLanguage": "EN",
+  "SurveyStatus": "Inactive"
+ },
+ "SurveyElements": [
+  {
+   "SurveyID": "SV_test_broken",
+   "Element": "BL",
+   "PrimaryAttribute": "Survey Blocks",
+   "Payload": [
+    {
+     "Type": "Standard",
+     "ID": "BL_1",
+     "Description": "Start",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID1"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID2"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID99"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "SurveyID": "SV_test_broken",
+   "Element": "FL",
+   "PrimaryAttribute": "Survey Flow",
+   "Payload": {
+    "Type": "Root",
+    "FlowID": "FL_1",
+    "Flow": [
+     {
+      "Type": "Standard",
+      "ID": "BL_1",
+      "FlowID": "FL_2"
+     },
+     {
+      "Type": "Standard",
+      "ID": "BL_MISSING",
+      "FlowID": "FL_3"
+     }
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_broken",
+   "Element": "SO",
+   "PrimaryAttribute": "Survey Options",
+   "Payload": {
+    "BackButton": "true",
+    "ProgressBarDisplay": "Text",
+    "SurveyProtection": "PublicSurvey"
+   }
+  },
+  {
+   "SurveyID": "SV_test_broken",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID1",
+   "Payload": {
+    "QuestionDescription": "This question is fine",
+    "QuestionID": "QID1",
+    "DataExportTag": "ok",
+    "QuestionText": "This question is fine",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Yes"
+     },
+     "2": {
+      "Display": "No"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2"
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_broken",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID2",
+   "Payload": {
+    "QuestionDescription": "Shown when an unknown question was answered",
+    "QuestionID": "QID2",
+    "DataExportTag": "skip",
+    "QuestionText": "Shown when an unknown question was answered",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "DisplayLogic": {
+     "0": {
+      "0": {
+       "LogicType": "Question",
+       "QuestionID": "QID77",
+       "QuestionIsInLoop": "no",
+       "ChoiceLocator": "q://QID77/SelectableChoice/1",
+       "Operator": "Selected",
+       "QuestionIDFromLocator": "QID77",
+       "LeftOperand": "q://QID77/SelectableChoice/1",
+       "Type": "Expression"
+      },
+      "Type": "If"
+     },
+     "Type": "BooleanExpression"
+    }
+   }
+  }
+ ]
+}

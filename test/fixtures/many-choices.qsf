@@ -1,0 +1,823 @@
+{
+ "SurveyEntry": {
+  "SurveyID": "SV_test_many",
+  "SurveyName": "Test 3 - Many choices (market research)",
+  "SurveyLanguage": "EN",
+  "SurveyStatus": "Inactive"
+ },
+ "SurveyElements": [
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "BL",
+   "PrimaryAttribute": "Survey Blocks",
+   "Payload": [
+    {
+     "Type": "Standard",
+     "ID": "BL_1",
+     "Description": "Consent",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID1"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "ID": "BL_2",
+     "Description": "Creative",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID2"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID3"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID4"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID5"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "ID": "BL_3",
+     "Description": "Details",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID6"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID7"
+      },
+      {
+       "Type": "Page Break"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID8"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID9"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID10"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID11"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID12"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "ID": "BL_4",
+     "Description": "Intro A",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID13"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "ID": "BL_5",
+     "Description": "Intro B",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID14"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "ID": "BL_6",
+     "Description": "Intro C",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID15"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "ID": "BL_7",
+     "Description": "End",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID16"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID17"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "FL",
+   "PrimaryAttribute": "Survey Flow",
+   "Payload": {
+    "Type": "Root",
+    "FlowID": "FL_1",
+    "Flow": [
+     {
+      "Type": "EmbeddedData",
+      "FlowID": "FL_2",
+      "EmbeddedData": [
+       {
+        "Description": "points",
+        "Type": "Custom",
+        "Field": "points",
+        "VariableType": "String",
+        "Value": "7"
+       },
+       {
+        "Description": "Q_URL",
+        "Type": "Recipient",
+        "Field": "Q_URL",
+        "VariableType": "String"
+       },
+       {
+        "Description": "Q_TotalDuration",
+        "Type": "Recipient",
+        "Field": "Q_TotalDuration",
+        "VariableType": "String"
+       }
+      ]
+     },
+     {
+      "Type": "Authenticator",
+      "FlowID": "FL_3",
+      "Flow": [
+       {
+        "Type": "Standard",
+        "ID": "BL_1",
+        "FlowID": "FL_4"
+       }
+      ]
+     },
+     {
+      "Type": "WebService",
+      "FlowID": "FL_5",
+      "URL": "https://example.com/lookup",
+      "Method": "POST"
+     },
+     {
+      "Type": "Standard",
+      "ID": "BL_2",
+      "FlowID": "FL_6"
+     },
+     {
+      "Type": "BlockRandomizer",
+      "FlowID": "FL_7",
+      "SubSet": "1",
+      "EvenPresentation": true,
+      "Flow": [
+       {
+        "Type": "Standard",
+        "ID": "BL_4",
+        "FlowID": "FL_8"
+       },
+       {
+        "Type": "Standard",
+        "ID": "BL_5",
+        "FlowID": "FL_9"
+       },
+       {
+        "Type": "Standard",
+        "ID": "BL_6",
+        "FlowID": "FL_10"
+       }
+      ]
+     },
+     {
+      "Type": "Standard",
+      "ID": "BL_3",
+      "FlowID": "FL_11"
+     },
+     {
+      "Type": "Branch",
+      "FlowID": "FL_12",
+      "Description": "Panel members only",
+      "BranchLogic": {
+       "0": {
+        "0": {
+         "LogicType": "PanelData",
+         "LeftOperand": "Panel/Member",
+         "Operator": "EqualTo",
+         "RightOperand": "1",
+         "Type": "Expression"
+        },
+        "Type": "If"
+       },
+       "Type": "BooleanExpression"
+      },
+      "Flow": [
+       {
+        "Type": "Standard",
+        "ID": "BL_7",
+        "FlowID": "FL_13"
+       }
+      ]
+     },
+     {
+      "Type": "TableOfContents",
+      "FlowID": "FL_14",
+      "Flow": []
+     },
+     {
+      "Type": "Conjoint",
+      "FlowID": "FL_15"
+     }
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SO",
+   "PrimaryAttribute": "Survey Options",
+   "Payload": {
+    "BackButton": "true",
+    "ProgressBarDisplay": "Text",
+    "SurveyProtection": "PublicSurvey"
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID1",
+   "Payload": {
+    "QuestionDescription": "Do you agree to take part?",
+    "QuestionID": "QID1",
+    "DataExportTag": "consent",
+    "QuestionText": "Do you agree to take part?",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Yes"
+     },
+     "2": {
+      "Display": "No"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2"
+    ],
+    "QuestionJS": "Qualtrics.SurveyEngine.addOnReady(function(){ jQuery('#consent').fadeIn(); });"
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID2",
+   "Payload": {
+    "QuestionDescription": "Please sign here",
+    "QuestionID": "QID2",
+    "DataExportTag": "signature",
+    "QuestionText": "Please sign here",
+    "QuestionType": "SS",
+    "Selector": "Signature",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID3",
+   "Payload": {
+    "QuestionDescription": "Draw your ideal workplace",
+    "QuestionID": "QID3",
+    "DataExportTag": "drawing",
+    "QuestionText": "Draw your ideal workplace",
+    "QuestionType": "Draw",
+    "Selector": "Draw",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID4",
+   "Payload": {
+    "QuestionDescription": "Click where you look first",
+    "QuestionID": "QID4",
+    "DataExportTag": "heatmap",
+    "QuestionText": "Click where you look first",
+    "QuestionType": "HeatMap",
+    "Selector": "HeatMap",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID5",
+   "Payload": {
+    "QuestionDescription": "Sort these products into groups",
+    "QuestionID": "QID5",
+    "DataExportTag": "groups",
+    "QuestionText": "Sort these products into groups",
+    "QuestionType": "PGR",
+    "Selector": "DragAndDrop",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Milk"
+     },
+     "2": {
+      "Display": "Bread"
+     },
+     "3": {
+      "Display": "Cheese"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3"
+    ],
+    "Groups": [
+     "Like",
+     "Dislike"
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID6",
+   "Payload": {
+    "QuestionDescription": "Your postcode",
+    "QuestionID": "QID6",
+    "DataExportTag": "postcode",
+    "QuestionText": "Your postcode",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "ContentType",
+      "ContentType": "ValidUSPhone"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID7",
+   "Payload": {
+    "QuestionDescription": "Your licence plate",
+    "QuestionID": "QID7",
+    "DataExportTag": "licence",
+    "QuestionText": "Your licence plate",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "ContentType",
+      "ContentType": "ValidLicencePlate"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID8",
+   "Payload": {
+    "QuestionDescription": "Which brands do you know?",
+    "QuestionID": "QID8",
+    "DataExportTag": "brands",
+    "QuestionText": "Which brands do you know?",
+    "QuestionType": "MC",
+    "Selector": "MAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Alpha"
+     },
+     "2": {
+      "Display": "Beta"
+     },
+     "3": {
+      "Display": "Gamma"
+     },
+     "4": {
+      "Display": "Delta"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID9",
+   "Payload": {
+    "QuestionDescription": "Which of these is your favourite?",
+    "QuestionID": "QID9",
+    "DataExportTag": "favourite",
+    "QuestionText": "Which of these is your favourite?",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {},
+    "ChoiceOrder": [],
+    "DynamicChoices": {
+     "DynamicType": "ChoiceGroup",
+     "Locator": "q://QID8/ChoiceGroup/SelectedChoices"
+    },
+    "DisplayLogic": {
+     "0": {
+      "0": {
+       "LogicType": "PanelData",
+       "LeftOperand": "Panel/Age",
+       "Operator": "GreaterThan",
+       "RightOperand": "30",
+       "Type": "Expression"
+      },
+      "Type": "If"
+     },
+     "Type": "BooleanExpression"
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID10",
+   "Payload": {
+    "QuestionDescription": "Your score is $e{ round( e://Field/points / 3 , 1) } and your browser language is ${e://Field/Q_URL}.",
+    "QuestionID": "QID10",
+    "DataExportTag": "calc",
+    "QuestionText": "Your score is $e{ round( e://Field/points / 3 , 1) } and your browser language is ${e://Field/Q_URL}.",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID11",
+   "Payload": {
+    "QuestionDescription": "Only for people in Germany: which city?",
+    "QuestionID": "QID11",
+    "DataExportTag": "device",
+    "QuestionText": "Only for people in Germany: which city?",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "DisplayLogic": {
+     "0": {
+      "0": {
+       "LogicType": "GeoIP",
+       "Operator": "Is",
+       "LeftOperand": "CountryCode",
+       "RightOperand": "DE",
+       "Type": "Expression"
+      },
+      "Type": "If"
+     },
+     "Type": "BooleanExpression"
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID12",
+   "Payload": {
+    "QuestionDescription": "Will you buy again?",
+    "QuestionID": "QID12",
+    "DataExportTag": "loyal",
+    "QuestionText": "Will you buy again?",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Yes"
+     },
+     "2": {
+      "Display": "Maybe"
+     },
+     "3": {
+      "Display": "No"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3"
+    ],
+    "QuestionJS": "Qualtrics.SurveyEngine.addOnPageSubmit(function(){ Qualtrics.SurveyEngine.setEmbeddedData('loyal', 1); });"
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID13",
+   "Payload": {
+    "QuestionDescription": "Random intro A",
+    "QuestionID": "QID13",
+    "DataExportTag": "r1",
+    "QuestionText": "Random intro A",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID14",
+   "Payload": {
+    "QuestionDescription": "Random intro B",
+    "QuestionID": "QID14",
+    "DataExportTag": "r2",
+    "QuestionText": "Random intro B",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID15",
+   "Payload": {
+    "QuestionDescription": "Random intro C",
+    "QuestionID": "QID15",
+    "DataExportTag": "r3",
+    "QuestionText": "Random intro C",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID16",
+   "Payload": {
+    "QuestionDescription": "Shown when your score is high",
+    "QuestionID": "QID16",
+    "DataExportTag": "scorecheck",
+    "QuestionText": "Shown when your score is high",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "OK"
+     }
+    },
+    "ChoiceOrder": [
+     "1"
+    ],
+    "DisplayLogic": {
+     "0": {
+      "0": {
+       "LogicType": "ScoringCategory",
+       "LeftOperand": "gr://SC_1/Score",
+       "Operator": "GreaterThan",
+       "RightOperand": "5",
+       "Type": "Expression"
+      },
+      "Type": "If"
+     },
+     "Type": "BooleanExpression"
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID17",
+   "Payload": {
+    "QuestionDescription": "Any last words?",
+    "QuestionID": "QID17",
+    "DataExportTag": "final",
+    "QuestionText": "Any last words?",
+    "QuestionType": "TE",
+    "Selector": "ML",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "SCO",
+   "PrimaryAttribute": "Scoring",
+   "Payload": {
+    "ScoringCategories": [
+     {
+      "ID": "SC_1",
+      "Name": "Engagement",
+      "Description": ""
+     }
+    ],
+    "GradingScales": [],
+    "DefaultScoringCategory": "SC_1"
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "QO",
+   "PrimaryAttribute": "QO_1",
+   "Payload": {
+    "Name": "Germany",
+    "Occurrences": 50,
+    "Logic": {
+     "0": {
+      "0": {
+       "LogicType": "GeoIP",
+       "Operator": "Is",
+       "LeftOperand": "CountryCode",
+       "RightOperand": "DE",
+       "Type": "Expression"
+      },
+      "Type": "If"
+     },
+     "Type": "BooleanExpression"
+    },
+    "LogicType": "Simple",
+    "QuotaAction": "EndCurrentSurvey",
+    "QuotaID": "QO_1"
+   }
+  },
+  {
+   "SurveyID": "SV_test_many",
+   "Element": "QO",
+   "PrimaryAttribute": "QO_2",
+   "Payload": {
+    "Name": "Overflow",
+    "Occurrences": 10,
+    "Logic": {
+     "0": {
+      "0": {
+       "LogicType": "Question",
+       "QuestionID": "QID12",
+       "QuestionIsInLoop": "no",
+       "ChoiceLocator": "q://QID12/SelectableChoice/1",
+       "Operator": "Selected",
+       "QuestionIDFromLocator": "QID12",
+       "LeftOperand": "q://QID12/SelectableChoice/1",
+       "Type": "Expression"
+      },
+      "Type": "If"
+     },
+     "Type": "BooleanExpression"
+    },
+    "LogicType": "Simple",
+    "QuotaAction": "SetEmbeddedData",
+    "QuotaID": "QO_2"
+   }
+  }
+ ]
+}
