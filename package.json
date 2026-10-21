@@ -1,0 +1,8 @@
+{
+  "name": "qualtrics-to-limesurvey",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

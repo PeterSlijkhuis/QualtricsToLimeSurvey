@@ -1,0 +1,1309 @@
+{
+ "SurveyEntry": {
+  "SurveyID": "SV_kitchen",
+  "SurveyName": "Kitchen sink",
+  "SurveyLanguage": "EN"
+ },
+ "SurveyElements": [
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "BL",
+   "PrimaryAttribute": "Survey Blocks",
+   "Payload": [
+    {
+     "Type": "Standard",
+     "Description": "Intro",
+     "ID": "BL_A",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID1",
+       "SkipLogic": [
+        {
+         "SkipLogicID": 1,
+         "ChoiceLocator": "q://QID1/SelectableChoice/2",
+         "Condition": "Selected",
+         "SkipToDestination": "ENDOFSURVEY",
+         "Locator": "q://QID1/SelectableChoice/2",
+         "QuestionID": "QID1"
+        }
+       ]
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID2"
+      },
+      {
+       "Type": "Page Break"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID3"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID4",
+       "SkipLogic": [
+        {
+         "SkipLogicID": 1,
+         "ChoiceLocator": "q://QID4/ChoiceTextEntryValue",
+         "Condition": "LessThan",
+         "SkipToDestination": "QID6",
+         "Locator": "q://QID4/ChoiceTextEntryValue",
+         "QuestionID": "QID4",
+         "RightOperand": "30"
+        }
+       ]
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID5"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID6"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "Description": "Details",
+     "ID": "BL_B",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID7"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID8"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID9"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID10"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID11"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID12"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID13"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID22"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "Description": "Colours",
+     "ID": "BL_C",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID14"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID15"
+      }
+     ],
+     "Options": {
+      "BlockLocking": "false",
+      "RandomizeQuestions": "false",
+      "Looping": "Static",
+      "LoopingOptions": {
+       "Static": {
+        "1": {
+         "1": "red"
+        },
+        "2": {
+         "1": "blue"
+        }
+       },
+       "Randomization": "None"
+      }
+     }
+    },
+    {
+     "Type": "Standard",
+     "Description": "Per fruit",
+     "ID": "BL_D",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID16"
+      }
+     ],
+     "Options": {
+      "BlockLocking": "false",
+      "RandomizeQuestions": "false",
+      "Looping": "Question",
+      "LoopingOptions": {
+       "Locator": "q://QID2/ChoiceGroup/SelectedChoices",
+       "QID": "QID2",
+       "ChoiceGroupLocator": "q://QID2/ChoiceGroup/SelectedChoices",
+       "Static": {},
+       "Randomization": "None"
+      }
+     }
+    },
+    {
+     "Type": "Standard",
+     "Description": "Group A",
+     "ID": "BL_E",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID17"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "Description": "Group B",
+     "ID": "BL_F",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID18"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "Description": "Random 1",
+     "ID": "BL_G",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID19"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "Description": "Random 2",
+     "ID": "BL_H",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID20"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "Description": "End",
+     "ID": "BL_I",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID21"
+      }
+     ]
+    },
+    {
+     "Type": "Trash",
+     "Description": "Trash / Unused Questions",
+     "ID": "BL_T"
+    }
+   ]
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "FL",
+   "PrimaryAttribute": "Survey Flow",
+   "Payload": {
+    "Type": "Root",
+    "FlowID": "FL_1",
+    "Flow": [
+     {
+      "Type": "EmbeddedData",
+      "FlowID": "FL_2",
+      "EmbeddedData": [
+       {
+        "Description": "group",
+        "Type": "Custom",
+        "Field": "group",
+        "VariableType": "String",
+        "DataVisibility": [],
+        "AnalyzeText": false
+       },
+       {
+        "Description": "score",
+        "Type": "Custom",
+        "Field": "score",
+        "VariableType": "String",
+        "DataVisibility": [],
+        "AnalyzeText": false,
+        "Value": "5"
+       },
+       {
+        "Description": "source",
+        "Type": "Custom",
+        "Field": "source",
+        "VariableType": "String",
+        "DataVisibility": [],
+        "AnalyzeText": false,
+        "Value": "web"
+       }
+      ]
+     },
+     {
+      "Type": "Standard",
+      "ID": "BL_A",
+      "FlowID": "FL_3"
+     },
+     {
+      "Type": "Branch",
+      "Description": "Stop word",
+      "BranchLogic": {
+       "0": {
+        "Type": "If",
+        "0": {
+         "LogicType": "Question",
+         "QuestionID": "QID3",
+         "QuestionIsInLoop": "no",
+         "ChoiceLocator": "q://QID3/ChoiceTextEntryValue",
+         "Operator": "EqualTo",
+         "QuestionIDFromLocator": "QID3",
+         "LeftOperand": "q://QID3/ChoiceTextEntryValue",
+         "RightOperand": "stop",
+         "Type": "Expression"
+        }
+       },
+       "Type": "BooleanExpression"
+      },
+      "Flow": [
+       {
+        "Type": "EndSurvey",
+        "FlowID": "FL_5"
+       }
+      ],
+      "FlowID": "FL_4"
+     },
+     {
+      "Type": "Standard",
+      "ID": "BL_B",
+      "FlowID": "FL_6"
+     },
+     {
+      "Type": "Branch",
+      "Description": "High score",
+      "BranchLogic": {
+       "0": {
+        "Type": "If",
+        "0": {
+         "LogicType": "EmbeddedField",
+         "LeftOperand": "score",
+         "Operator": "GreaterThan",
+         "RightOperand": "3",
+         "Type": "Expression"
+        }
+       },
+       "Type": "BooleanExpression"
+      },
+      "Flow": [
+       {
+        "Type": "EmbeddedData",
+        "FlowID": "FL_8",
+        "EmbeddedData": [
+         {
+          "Description": "score",
+          "Type": "Custom",
+          "Field": "score",
+          "VariableType": "String",
+          "DataVisibility": [],
+          "AnalyzeText": false,
+          "Value": "$e{ e://Field/score + 1 }"
+         }
+        ]
+       },
+       {
+        "Type": "Standard",
+        "ID": "BL_C",
+        "FlowID": "FL_9"
+       }
+      ],
+      "FlowID": "FL_7"
+     },
+     {
+      "Type": "Standard",
+      "ID": "BL_D",
+      "FlowID": "FL_10"
+     },
+     {
+      "Type": "BlockRandomizer",
+      "SubSet": 1,
+      "EvenPresentation": true,
+      "Flow": [
+       {
+        "Type": "EmbeddedData",
+        "FlowID": "FL_12",
+        "EmbeddedData": [
+         {
+          "Description": "cond",
+          "Type": "Custom",
+          "Field": "cond",
+          "VariableType": "String",
+          "DataVisibility": [],
+          "AnalyzeText": false,
+          "Value": "A"
+         }
+        ]
+       },
+       {
+        "Type": "EmbeddedData",
+        "FlowID": "FL_13",
+        "EmbeddedData": [
+         {
+          "Description": "cond",
+          "Type": "Custom",
+          "Field": "cond",
+          "VariableType": "String",
+          "DataVisibility": [],
+          "AnalyzeText": false,
+          "Value": "B"
+         }
+        ]
+       }
+      ],
+      "FlowID": "FL_11"
+     },
+     {
+      "Type": "BlockRandomizer",
+      "SubSet": 1,
+      "Flow": [
+       {
+        "Type": "Standard",
+        "ID": "BL_E",
+        "FlowID": "FL_15"
+       },
+       {
+        "Type": "Standard",
+        "ID": "BL_F",
+        "FlowID": "FL_16"
+       }
+      ],
+      "FlowID": "FL_14"
+     },
+     {
+      "Type": "BlockRandomizer",
+      "SubSet": 2,
+      "Flow": [
+       {
+        "Type": "Standard",
+        "ID": "BL_G",
+        "FlowID": "FL_18"
+       },
+       {
+        "Type": "Standard",
+        "ID": "BL_H",
+        "FlowID": "FL_19"
+       }
+      ],
+      "FlowID": "FL_17"
+     },
+     {
+      "Type": "Standard",
+      "ID": "BL_I",
+      "FlowID": "FL_20"
+     },
+     {
+      "Type": "EndSurvey",
+      "FlowID": "FL_21"
+     }
+    ],
+    "Properties": {
+     "Count": 21
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SO",
+   "PrimaryAttribute": "Survey Options",
+   "Payload": {
+    "BackButton": "true",
+    "ProgressBarDisplay": "Text",
+    "SurveyProtection": "PublicSurvey",
+    "AvailableLanguages": {
+     "EN": [],
+     "NL": []
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID1",
+   "Payload": {
+    "QuestionText": "Do you like fruit?",
+    "DataExportTag": "likes",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Do you like fruit?",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": {
+     "NL": {
+      "QuestionText": "Houdt u van fruit?",
+      "Choices": {
+       "1": {
+        "Display": "Ja"
+       },
+       "2": {
+        "Display": "Nee"
+       },
+       "3": {
+        "Display": "Iets anders"
+       }
+      }
+     }
+    },
+    "QuestionID": "QID1",
+    "SubSelector": "TX",
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "Yes"
+     },
+     "2": {
+      "Display": "No"
+     },
+     "3": {
+      "Display": "Something else",
+      "TextEntry": "true"
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID2",
+   "Payload": {
+    "QuestionText": "Which fruits do you eat?",
+    "DataExportTag": "fruits",
+    "QuestionType": "MC",
+    "Selector": "MAVR",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Which fruits do you eat?",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "MinChoices",
+      "MinChoices": "1"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID2",
+    "SubSelector": "TX",
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "Apple"
+     },
+     "2": {
+      "Display": "Banana"
+     },
+     "3": {
+      "Display": "Cherry"
+     },
+     "4": {
+      "Display": "None of these",
+      "ExclusiveAnswer": true
+     }
+    },
+    "DisplayLogic": {
+     "0": {
+      "Type": "If",
+      "0": {
+       "LogicType": "Question",
+       "QuestionID": "QID1",
+       "QuestionIsInLoop": "no",
+       "ChoiceLocator": "q://QID1/SelectableChoice/1",
+       "Operator": "Selected",
+       "QuestionIDFromLocator": "QID1",
+       "LeftOperand": "q://QID1/SelectableChoice/1",
+       "Type": "Expression"
+      }
+     },
+     "Type": "BooleanExpression"
+    },
+    "Randomization": {
+     "Advanced": null,
+     "Type": "All",
+     "TotalRandSubset": ""
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID3",
+   "Payload": {
+    "QuestionText": "Why do you like ${q://QID2/ChoiceGroup/SelectedChoices}?",
+    "DataExportTag": "why",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Why do you like ${q://QID2/ChoiceGroup/SelectedChoices}?",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "ON",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID3",
+    "DisplayLogic": {
+     "0": {
+      "Type": "If",
+      "0": {
+       "LogicType": "Question",
+       "QuestionID": "QID2",
+       "QuestionIsInLoop": "no",
+       "ChoiceLocator": "q://QID2/SelectableChoice/1",
+       "Operator": "Selected",
+       "QuestionIDFromLocator": "QID2",
+       "LeftOperand": "q://QID2/SelectableChoice/1",
+       "Type": "Expression"
+      },
+      "1": {
+       "LogicType": "Question",
+       "QuestionID": "QID2",
+       "QuestionIsInLoop": "no",
+       "ChoiceLocator": "q://QID2/SelectableChoice/2",
+       "Operator": "Selected",
+       "QuestionIDFromLocator": "QID2",
+       "LeftOperand": "q://QID2/SelectableChoice/2",
+       "Conjuction": "Or",
+       "Type": "Expression"
+      }
+     },
+     "Type": "BooleanExpression"
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID4",
+   "Payload": {
+    "QuestionText": "How old are you?",
+    "DataExportTag": "age",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "How old are you?",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "ContentType",
+      "ContentType": "ValidNumber",
+      "ValidNumber": {
+       "Min": "18",
+       "Max": "99",
+       "NumDecimals": "0"
+      }
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID4"
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID5",
+   "Payload": {
+    "QuestionText": "Only for 30 and older: do you cook?",
+    "DataExportTag": "older",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Only for 30 and older: do you cook?",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID5",
+    "SubSelector": "TX",
+    "ChoiceOrder": [
+     "1",
+     "2"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "Yes"
+     },
+     "2": {
+      "Display": "No"
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID6",
+   "Payload": {
+    "QuestionText": "Rate the fruits you eat",
+    "DataExportTag": "rating",
+    "QuestionType": "Matrix",
+    "Selector": "Likert",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Rate the fruits you eat",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID6",
+    "SubSelector": "SingleAnswer",
+    "ChoiceOrder": [],
+    "AnswerOrder": [
+     "1",
+     "2",
+     "3"
+    ],
+    "Choices": {},
+    "Answers": {
+     "1": {
+      "Display": "Bad"
+     },
+     "2": {
+      "Display": "OK"
+     },
+     "3": {
+      "Display": "Good"
+     }
+    },
+    "DynamicChoices": {
+     "DynamicType": "ChoiceGroup",
+     "Locator": "q://QID2/ChoiceGroup/SelectedChoices"
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID7",
+   "Payload": {
+    "QuestionText": "How much do you like",
+    "DataExportTag": "slider",
+    "QuestionType": "Slider",
+    "Selector": "HSLIDER",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText",
+     "CSSliderMin": 0,
+     "CSSliderMax": 10,
+     "GridLines": 10,
+     "SnapToGrid": true,
+     "NumDecimals": "0"
+    },
+    "QuestionDescription": "How much do you like",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID7",
+    "ChoiceOrder": [
+     "1",
+     "2"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "Sweet"
+     },
+     "2": {
+      "Display": "Sour"
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID8",
+   "Payload": {
+    "QuestionText": "Split 100 points",
+    "DataExportTag": "budget",
+    "QuestionType": "CS",
+    "Selector": "VRTL",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Split 100 points",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "ChoicesTotal",
+      "ChoiceTotal": "100"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID8",
+    "ChoiceOrder": [
+     "1",
+     "2"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "Fruit"
+     },
+     "2": {
+      "Display": "Vegetables"
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID9",
+   "Payload": {
+    "QuestionText": "Rank these",
+    "DataExportTag": "rank",
+    "QuestionType": "RO",
+    "Selector": "DND",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Rank these",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID9",
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "Apple"
+     },
+     "2": {
+      "Display": "Banana"
+     },
+     "3": {
+      "Display": "Cherry"
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID10",
+   "Payload": {
+    "QuestionText": "Contact details",
+    "DataExportTag": "contact",
+    "QuestionType": "TE",
+    "Selector": "FORM",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Contact details",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID10",
+    "ChoiceOrder": [
+     "1",
+     "2"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "Name"
+     },
+     "2": {
+      "Display": "Email"
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID11",
+   "Payload": {
+    "QuestionText": "Which snacks?",
+    "DataExportTag": "snacks",
+    "QuestionType": "MC",
+    "Selector": "MAVR",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Which snacks?",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID11",
+    "SubSelector": "TX",
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "Nuts"
+     },
+     "2": {
+      "Display": "Chips"
+     },
+     "3": {
+      "Display": "Fruit salad",
+      "DisplayLogic": {
+       "0": {
+        "Type": "If",
+        "0": {
+         "LogicType": "Question",
+         "QuestionID": "QID1",
+         "QuestionIsInLoop": "no",
+         "ChoiceLocator": "q://QID1/SelectableChoice/1",
+         "Operator": "Selected",
+         "QuestionIDFromLocator": "QID1",
+         "LeftOperand": "q://QID1/SelectableChoice/1",
+         "Type": "Expression"
+        }
+       },
+       "Type": "BooleanExpression"
+      }
+     }
+    },
+    "DefaultChoices": {
+     "1": {
+      "Selected": true
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID12",
+   "Payload": {
+    "QuestionText": "Group ${e://Field/group}, source ${e://Field/source}, lucky ${rand://int/1:5}, double score $e{ e://Field/score * 2 }, condition ${e://Field/cond}",
+    "DataExportTag": "info",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Group ${e://Field/group}, source ${e://Field/source}, lucky ${rand://int/1:5}, double score $e{ e://Field/score * 2 }, condition ${e://Field/cond}",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID12"
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID13",
+   "Payload": {
+    "QuestionText": "Enter a code with an x",
+    "DataExportTag": "code",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Enter a code with an x",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "CustomValidation",
+      "CustomValidation": {
+       "Logic": {
+        "0": {
+         "Type": "If",
+         "0": {
+          "LogicType": "Question",
+          "QuestionID": "QID13",
+          "QuestionIsInLoop": "no",
+          "ChoiceLocator": "q://QID13/ChoiceTextEntryValue",
+          "Operator": "Contains",
+          "QuestionIDFromLocator": "QID13",
+          "LeftOperand": "q://QID13/ChoiceTextEntryValue",
+          "RightOperand": "x",
+          "Type": "Expression"
+         }
+        },
+        "Type": "BooleanExpression"
+       },
+       "Message": {
+        "description": "The code must contain an x"
+       }
+      }
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID13",
+    "DefaultChoices": {
+     "TEXT": {
+      "Text": "abc"
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID14",
+   "Payload": {
+    "QuestionText": "Do you like ${lm://Field/1}?",
+    "DataExportTag": "loopq",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Do you like ${lm://Field/1}?",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID14",
+    "SubSelector": "TX",
+    "ChoiceOrder": [
+     "1",
+     "2"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "Yes"
+     },
+     "2": {
+      "Display": "No"
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID15",
+   "Payload": {
+    "QuestionText": "Why ${lm://Field/1}?",
+    "DataExportTag": "loopwhy",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Why ${lm://Field/1}?",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID15",
+    "DisplayLogic": {
+     "0": {
+      "Type": "If",
+      "0": {
+       "LogicType": "Question",
+       "QuestionID": "QID14",
+       "QuestionIsInLoop": "yes",
+       "ChoiceLocator": "q://QID14/SelectableChoice/1",
+       "Operator": "Selected",
+       "QuestionIDFromLocator": "QID14",
+       "LeftOperand": "q://QID14/SelectableChoice/1",
+       "Type": "Expression"
+      }
+     },
+     "Type": "BooleanExpression"
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID16",
+   "Payload": {
+    "QuestionText": "How often do you eat ${lm://Field/1}?",
+    "DataExportTag": "often",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "How often do you eat ${lm://Field/1}?",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID16"
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID17",
+   "Payload": {
+    "QuestionText": "You are in group A",
+    "DataExportTag": "grpA",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "You are in group A",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID17"
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID18",
+   "Payload": {
+    "QuestionText": "You are in group B",
+    "DataExportTag": "grpB",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "You are in group B",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID18"
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID19",
+   "Payload": {
+    "QuestionText": "Random block 1",
+    "DataExportTag": "r1",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Random block 1",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID19"
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID20",
+   "Payload": {
+    "QuestionText": "Random block 2",
+    "DataExportTag": "r2",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Random block 2",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID20"
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID21",
+   "Payload": {
+    "QuestionText": "Any final comments? (condition ${e://Field/cond}, score ${e://Field/score})",
+    "DataExportTag": "final",
+    "QuestionType": "TE",
+    "Selector": "ML",
+    "Configuration": {
+     "QuestionDescriptionOption": "UseText"
+    },
+    "QuestionDescription": "Any final comments?",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "ForceResponseType": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": {
+     "NL": {
+      "QuestionText": "Nog opmerkingen?"
+     }
+    },
+    "QuestionID": "QID21"
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID22",
+   "Payload": {
+    "QuestionText": "Favourite drink?",
+    "DataExportTag": "drink",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "QuestionDescription": "",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID22",
+    "Choices": {
+     "1": {
+      "Display": "Water"
+     },
+     "2": {
+      "Display": "Smoothie",
+      "DisplayLogic": {
+       "0": {
+        "0": {
+         "LogicType": "Question",
+         "QuestionID": "QID1",
+         "QuestionIsInLoop": "no",
+         "ChoiceLocator": "q://QID1/SelectableChoice/1",
+         "Operator": "Selected",
+         "QuestionIDFromLocator": "QID1",
+         "LeftOperand": "q://QID1/SelectableChoice/1",
+         "Type": "Expression"
+        },
+        "Type": "If"
+       },
+       "Type": "BooleanExpression"
+      }
+     },
+     "3": {
+      "Display": "Tea"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3"
+    ],
+    "DefaultChoices": {
+     "3": {
+      "Selected": true
+     }
+    }
+   }
+  }
+ ]
+}
