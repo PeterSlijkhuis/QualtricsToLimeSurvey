@@ -48,18 +48,35 @@ test('kitchen sink converts every behaviour without problems', () => {
   has(lss, '{ResponseID = SAVEDID}');
 });
 
-test('unconvertible parts are listed with a fix and block the output', () => {
-  const r = convert({
+const blocked = {
     SurveyEntry: { SurveyName: 'x', SurveyLanguage: 'EN' },
     SurveyElements: [
       { Element: 'BL', Payload: [{ Type: 'Standard', ID: 'BL_1', Description: 'B', BlockElements: [{ Type: 'Question', QuestionID: 'QID1' }] }] },
       { Element: 'FL', Payload: { Type: 'Root', Flow: [{ Type: 'Branch', FlowID: 'FL_2', BranchLogic: { 0: { 0: { LogicType: 'GeoIP', Operator: 'Is', LeftOperand: 'NL', Type: 'Expression' }, Type: 'If' }, Type: 'BooleanExpression' }, Flow: [{ Type: 'Standard', ID: 'BL_1' }] }] } },
       { Element: 'SQ', Payload: { QuestionID: 'QID1', DataExportTag: 'Q1', QuestionType: 'MC', Selector: 'SAVR', QuestionText: 'Hi', Choices: { 1: { Display: 'a' } }, QuestionJS: 'Qualtrics.SurveyEngine.addOnload(function(){ this.hideNextButton(); });' } },
     ],
-  });
+};
+
+test('unconvertible parts are listed with a fix and options, and block the output', () => {
+  const r = convert(blocked);
   assert.equal(r.lss, '');
   assert.equal(r.problems.length, 2);
-  assert.ok(r.problems.every(p => p.where && p.issue && p.fix));
+  assert.ok(r.problems.every(p => p.id && p.where && p.issue && p.fix && p.options.length));
+});
+
+test('chosen options resolve problems, and edits change the output', () => {
+  const pick = key => convert(blocked).problems.find(p => p.options.some(o => o.key === key)).id;
+  const choices = { [pick('false')]: 'false', [pick('drop')]: 'drop' };
+  const r = convert(blocked, { choices, title: 'Renamed', edits: { QID1: { code: 'intro', mandatory: 'Y' } } });
+  assert.deepEqual(r.problems, []);
+  assert.equal(r.notes.filter(n => n.fix.startsWith('Your choice:')).length, 2);
+  has(r.lss, '<grelevance><![CDATA[0]]></grelevance>');
+  has(r.lss, '<title><![CDATA[intro]]></title>');
+  has(r.lss, '<surveyls_title><![CDATA[Renamed]]></surveyls_title>');
+  has(r.lss, '<mandatory><![CDATA[Y]]></mandatory>');
+  assert.equal(r.items[0].id, 'QID1');
+  const skipped = convert(blocked, { choices, edits: { QID1: { skip: true } } });
+  assert.equal(skipped.stats.questions, 0);
 });
 
 test('real survey with loop & merge on a numeric answer converts', () => {
