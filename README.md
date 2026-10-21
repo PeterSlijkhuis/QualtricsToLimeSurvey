@@ -29,6 +29,10 @@ npm test                 # node --test, no dependencies
 python3 -m http.server   # then open http://localhost:8000
 ```
 
+Every push to `main` or `development` and every pull request runs the tests on Node 18, 22 and 24, then imports each
+converted fixture into LimeSurvey 6.17 and fails on any import warning or ExpressionScript syntax error
+(`.github/workflows/test.yml`, using `test/limesurvey/CheckLssCommand.php`).
+
 `convert(qsfTextOrObject)` returns `{ lss, problems, notes, stats }`. It works the same in Node and the browser.
 
 ## How Qualtrics maps to LimeSurvey

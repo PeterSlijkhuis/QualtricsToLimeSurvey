@@ -1,0 +1,64 @@
+name: test
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
+
+  # Imports every converted fixture into a real LimeSurvey and fails on import warnings
+  # or ExpressionScript syntax errors.
+  limesurvey:
+    runs-on: ubuntu-latest
+    env:
+      LIMESURVEY_TAG: 6.17.19+260832
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: limesurvey
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pgsql, pdo_pgsql, mbstring, gd, zip, intl, xml
+      - name: Convert fixtures
+        run: |
+          mkdir -p "$RUNNER_TEMP/lss"
+          node --input-type=module -e "
+            import { convert } from './src/qsf2lss.js';
+            import fs from 'node:fs';
+            for (const f of fs.readdirSync('test/fixtures').filter(f => f.endsWith('.qsf'))) {
+              const r = convert(fs.readFileSync('test/fixtures/' + f, 'utf8'));
+              if (!r.lss) { console.error(f, r.problems); process.exit(1); }
+              fs.writeFileSync(process.env.RUNNER_TEMP + '/lss/' + f.replace(/qsf$/, 'lss'), r.lss);
+            }"
+      - name: Install LimeSurvey
+        run: |
+          git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$LIMESURVEY_TAG" https://github.com/LimeSurvey/LimeSurvey.git "$RUNNER_TEMP/ls"
+          cd "$RUNNER_TEMP/ls/application"
+          sed -e 's/host=localhost;port=5432;user=postgres;password=somepassword;dbname=limesurvey;/host=127.0.0.1;port=5432;user=postgres;password=postgres;dbname=limesurvey;/' \
+              -e "s/'password' => 'somepassword'/'password' => 'postgres'/" config/config-sample-pgsql.php > config/config.php
+          php commands/console.php install admin adminpass Admin admin@example.com
+          cp "$GITHUB_WORKSPACE/test/limesurvey/CheckLssCommand.php" commands/
+      - name: Import and check logic
+        run: cd "$RUNNER_TEMP/ls/application" && php commands/console.php checklss "$RUNNER_TEMP"/lss/*.lss
