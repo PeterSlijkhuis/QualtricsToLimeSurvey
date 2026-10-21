@@ -161,7 +161,7 @@ class Converter {
       const n = this.flowCount = this.flowCount || {};
       n[label] = (n[label] || 0) + 1;
       const blocks = (f.Flow || []).map(k => this.blocks[k.ID] && `"${strip(this.blocks[k.ID].Description || k.ID)}"`).filter(Boolean);
-      this.flowNames[f.FlowID] = `${label} ${n[label]}` + (blocks.length ? ` (block${blocks.length > 1 ? 's' : ''} ${blocks.slice(0, 3).join(', ')}${blocks.length > 3 ? ', ...' : ''})` : '');
+      this.flowNames[f.FlowID] = `${label} ${n[label]}` + (blocks.length ? ` (block${blocks.length > 1 ? 's' : ''} ${blocks.slice(0, 3).join(', ')}${blocks.length > 3 ? ', ...' : ''})` : f.Flow && f.Flow.length ? ` (${f.Flow.length} part${f.Flow.length > 1 ? 's' : ''} of the survey flow)` : '');
     }
     return this.flowNames[f.FlowID];
   }
@@ -264,7 +264,7 @@ class Converter {
     const meta = { ResponseID: 'SAVEDID', SurveyID: 'SID', StartDate: 'date("Y-m-d H:i:s")', RecordedDate: 'date("Y-m-d H:i:s")', CurrentDate: 'date("Y-m-d")', CurrentTime: 'date("H:i:s")', Q_Language: 'LANG', UserLanguage: 'LANG' }[field];
     if (meta && ed.Type !== 'Custom') return this.assign(v, meta, conds);
     if (ed.Type === 'SurveyMetaData' || ed.Type === 'Survey') {
-      if (this.problem(`Embedded data "${field}"`, `The built-in Qualtrics field "${field}" has no LimeSurvey equivalent.`, 'Remove it from the flow, or set it with a URL parameter of the same name.',
+      if (this.problem(`Hidden field "${field}"`, `The built-in Qualtrics field "${field}" has no LimeSurvey equivalent.`, 'Remove it from the flow, or set it with a URL parameter of the same name.',
         [opt('url', 'Fill it from the survey link', `The value comes from the link, for example ...?${field}=value. Without it, the field stays empty.`), opt('empty', 'Leave it empty', 'The field exists in the data but stays empty.')],
         { qualtrics: `Qualtrics fills "${field}" by itself with information about the survey or the response.`, why: 'LimeSurvey does not know this value, so you decide where it should come from.' }) === 'url') this.vars[field].urlParam = true;
       return;
@@ -273,12 +273,12 @@ class Converter {
       this.vars[field].urlParam = true; // filled from the survey link (?field=...)
       return;
     }
-    this.assign(v, { raw: String(value), where: `Embedded data "${field}"` }, conds);
+    this.assign(v, { raw: String(value), where: `Hidden field "${field}"` }, conds);
   }
 
   varName(field) {
     if (!this.vars[field]) {
-      const q = this.newQuestion(this.varGroup, field, 'S', { where: `Embedded data "${field}"` });
+      const q = this.newQuestion(this.varGroup, field, 'S', { where: `Hidden field "${field}"` });
       q.hidden = true;
       q.text = { [this.lang]: field };
       this.vars[field] = q;
@@ -434,7 +434,7 @@ class Converter {
     if (p.QuestionType === 'Timing') {
       this.savetimings = true;
       const max = Number((p.Configuration || {}).MaxSeconds) || 0;
-      if (max > 0) { g.timeLimit = max; this.note(where, `The timer question itself is gone. LimeSurvey moves on to the next page after ${max} seconds, and records how long each respondent spent on every page.`); }
+      if (max > 0) { g.timeLimit = max; this.note(where, `The timer question itself is gone. LimeSurvey moves on to the next page after ${Math.max(1, Math.round(max))} seconds, and records how long each respondent spent on every page.`); }
       else this.note(where, 'The timer question itself is gone. LimeSurvey records how long each respondent spent on every page instead.');
       return null;
     }
@@ -454,7 +454,7 @@ class Converter {
       p = ctx.p = { ...p, ...as, Validation: as.QuestionType === 'DB' ? undefined : p.Validation };
     }
     if (p.QuestionJS && !isDefaultJs(p.QuestionJS)) {
-      const c = this.problem(where, 'This question has custom JavaScript that only works in Qualtrics.', 'Remove the JavaScript in Qualtrics, then rebuild the behaviour in LimeSurvey with ExpressionScript or the question\'s own script field.',
+      const c = this.problem(where, 'This question has custom JavaScript that only works in Qualtrics.', 'Remove the JavaScript in Qualtrics. If the question needs that behaviour, ask whoever built the survey to rebuild it in LimeSurvey.',
         [opt('drop', 'Keep the question, drop the script', 'The question is asked normally, without the extra behaviour the script added (such as timers, hidden buttons or custom layouts).'), opt('remove', 'Leave the question out', 'The question disappears, with its data.')],
         { qualtrics: 'Qualtrics runs a small program with this question, for example to hide the Next button, time the answer or change the layout.', why: 'The program uses Qualtrics commands that do not exist in LimeSurvey, so it would not run.' });
 
@@ -479,7 +479,7 @@ class Converter {
 
   sideBySide(p, g, ctx, base) {
     const cols = Object.entries(p.AdditionalQuestions || {});
-    this.note(ctx.where, `This side-by-side question became ${cols.length} grid questions shown one after another, one per column, with the same rows. Answers are stored per column.`);
+    this.note(ctx.where, `This side-by-side question became ${cols.length === 1 ? 'a grid question' : cols.length + ' grid questions shown one after another'}, one per column, with the same rows. Answers are stored per column.`);
     let first;
     cols.forEach(([k, sub], i) => {
       const q = this.newQuestion(g, `${base}c${k}`, 'X', { ...ctx, where: `${ctx.where} column ${k}` });
@@ -683,7 +683,7 @@ class Converter {
     const g = this.groups.find(x => x.gid === q.gid);
     const t = this.newQuestion(g, `${q.code}${id}TEXT`, 'S', { where: q.where, followOf: q, followId: id, followRaw: display(c) });
     (q.textBoxes || (q.textBoxes = {}))[id] = t;
-    this.note(q.where, `The text box next to "${strip(display(c))}" became its own small question (${t.code}), shown right after it when that choice is picked. The typed text is stored under ${t.code}.`);
+    this.note(q.where, `The text box next to "${strip(display(c))}" became its own small question, shown right after it when that choice is picked. Nothing to do: respondents type their text there, as before.`);
   }
 
   answersAsColumns(q, p) {
@@ -788,7 +788,7 @@ class Converter {
       if (ct === 'ValidDate') return;
       const re = { ValidEmail: '/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/', ValidUSPhone: '/^\\(?\\d{3}\\)?[-. ]?\\d{3}[-. ]?\\d{4}$/', ValidPhone: '/^[+0-9 ()./-]{6,}$/', ValidUSZip: '/^\\d{5}(-\\d{4})?$/', ValidZip: '/^[A-Za-z0-9 -]{3,10}$/', ValidTextOnly: '/^[^0-9]*$/', ValidUSState: '/^[A-Za-z]{2}$/' }[ct];
       if (re) { q.preg = re; return; }
-      return this.problem(q.where, 'This text box checks the answer format in a way LimeSurvey does not know.', 'Use email, number, phone, zip, date or text-only validation, or write a regular expression in LimeSurvey.', [opt('drop', 'Accept any text', 'Respondents can type anything; you may get answers in the wrong format.')], { qualtrics: `Qualtrics only accepts answers in the format "${ct}".`, why: 'LimeSurvey has no ready-made check for this format.' });
+      return this.problem(q.where, 'This text box checks the answer format in a way LimeSurvey does not know.', 'In Qualtrics, change the answer check to email, number, phone, postcode, date or text only.', [opt('drop', 'Accept any text', 'Respondents can type anything; you may get answers in the wrong format.')], { qualtrics: `Qualtrics only accepts answers in the format "${ct}".`, why: 'LimeSurvey has no ready-made check for this format.' });
     }
     if (type === 'MinChar' || type === 'MaxChar' || type === 'CharRange' || type === 'TextLength') {
       if (s.MaxChars) q.attrs.maximum_chars = s.MaxChars;
@@ -941,7 +941,7 @@ class Converter {
     if (it.LogicType !== 'Question') {
       const what = { GeoIP: 'the respondent\'s location, looked up from their internet address', Panel: 'information from a Qualtrics contact list', Quota: 'whether a quota is full', ScoringCategory: 'a score', Classification: 'a Qualtrics classification' }[it.LogicType] || `"${it.LogicType}"`;
       return this.condProblem(where, `This condition depends on ${what}.`,
-        { GeoIP: 'Remove the location condition, or ask for the location in a question.', Panel: 'Use participant (token) attributes and test them with TOKEN:ATTRIBUTE_1.', Quota: 'Remove quota conditions; recreate the quotas in LimeSurvey.', ScoringCategory: 'Use LimeSurvey assessments, or compute the score with an equation question.', Classification: 'Remove the condition.' }[it.LogicType] || 'Replace it with a condition on an answer or embedded data field.',
+        { GeoIP: 'Remove the location condition, or ask for the location in a question.', Panel: 'Remove the condition, or base it on an answer instead of the contact list.', Quota: 'Remove quota conditions; recreate the quotas in LimeSurvey.', ScoringCategory: 'Remove the condition, or base it on an answer instead of a score.', Classification: 'Remove the condition.' }[it.LogicType] || 'Replace it with a condition on an answer or a hidden field.',
         { qualtrics: `Qualtrics checks ${what}${it.Description ? ` ("${strip(it.Description).trim()}")` : ''}.` });
     }
     const loc = parseLoc(it.LeftOperand || it.ChoiceLocator || '');
@@ -1134,7 +1134,7 @@ class Converter {
       return r.literal !== undefined ? JSON.stringify(r.literal) : `floatval(${r.expr})`;
     });
     if (/[^\s\d+\-*/().,"a-zA-Z_]/.test(expr.replace(/"[^"]*"/g, ''))) {
-      this.problem(ctx.where, 'This text contains a calculation LimeSurvey cannot do.', 'Use + - * / and parentheses only, or compute the value in LimeSurvey with an equation question.', [BLANK], { qualtrics: `Qualtrics calculates "${body.trim()}" and shows the result in the text.`, why: 'The calculation uses functions the converter cannot translate.' });
+      this.problem(ctx.where, 'This text contains a calculation LimeSurvey cannot do.', 'In Qualtrics, use only + - * / and brackets in the calculation, or remove it.', [BLANK], { qualtrics: `Qualtrics calculates "${body.trim()}" and shows the result in the text.`, why: 'The calculation uses functions the converter cannot translate.' });
       return { expr: '""' };
     }
     return { expr: expr.trim().replace(/\b(abs|round|floor|ceil|sqrt|pow|min|max|sum|log|exp)\b/gi, f => f.toLowerCase()) };
@@ -1166,7 +1166,7 @@ class Converter {
     if ((m = /^gr:\/\/(SC_\w+)\/(Score|WeightedMean|WeightedStdDev)$/.exec(s)) && this.scores[m[1]]) {
       if (m[2] === 'Score') return { expr: this.scoreExpr(m[1]) };
     }
-    this.problem(ctx.where, 'This text fills in a value LimeSurvey cannot provide.', s.startsWith('gr://') ? 'Use LimeSurvey assessments, or compute the score with an equation question.' : 'Remove the piped text, or replace it with an answer or embedded data field.', [BLANK], { qualtrics: `Qualtrics replaces \${${s}} with a value when the page is shown (piped text).`, why: 'LimeSurvey has no source for this value.' });
+    this.problem(ctx.where, 'This text fills in a value LimeSurvey cannot provide.', s.startsWith('gr://') ? 'Remove the score from the text.' : 'Remove the inserted value, or insert an answer or a hidden field instead.', [BLANK], { qualtrics: `Qualtrics replaces \${${s}} with a value when the page is shown (piped text).`, why: 'LimeSurvey has no source for this value.' });
     return { literal: '' };
   }
 
