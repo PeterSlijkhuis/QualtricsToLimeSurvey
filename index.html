@@ -6,6 +6,10 @@
 <meta name="color-scheme" content="light dark">
 <title>Qualtrics to LimeSurvey</title>
 <meta name="description" content="Convert a Qualtrics survey (.qsf) into a LimeSurvey survey (.lss), logic included. Runs in your browser.">
+<script>
+  // Apply the saved look before the page paints, so it does not flash.
+  try { const s = JSON.parse(localStorage.getItem('q2l-settings') || '{}'); if (s.theme && s.theme !== 'auto') document.documentElement.dataset.theme = s.theme; if (s.size && s.size !== 'normal') document.documentElement.dataset.size = s.size; } catch {}
+</script>
 <style>
   :root {
     --bg: #f5f5f7; --surface: #ffffff; --surface-2: #fbfbfd; --text: #1d1d1f; --muted: #6e6e73; --faint: #86868b;
@@ -15,16 +19,27 @@
     --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .06); --bar: rgba(245, 245, 247, .78);
     --radius: 18px; --radius-s: 12px; --seg-on: #ffffff;
   }
+  /* Dark tokens: follow the device unless the visitor picked a look in Settings. */
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --bg: #000000; --surface: #1c1c1e; --surface-2: #2c2c2e; --text: #f5f5f7; --muted: #a1a1a6; --faint: #8e8e93;
       --line: rgba(255, 255, 255, .1); --line-strong: rgba(255, 255, 255, .2); --accent: #2997ff; --accent-hover: #47a6ff;
       --accent-soft: rgba(41, 151, 255, .16); --ok: #30d158; --ok-soft: rgba(48, 209, 88, .16); --warn: #ffb340;
       --warn-soft: rgba(255, 179, 64, .16); --bad: #ff6961; --bad-soft: rgba(255, 105, 97, .16);
-      --shadow: 0 0 0 1px rgba(255, 255, 255, .06); --bar: rgba(0, 0, 0, .72); --seg-on: #636366;
+      --shadow: 0 0 0 1px rgba(255, 255, 255, .06); --bar: rgba(0, 0, 0, .72); --seg-on: #636366; color-scheme: dark;
     }
   }
-  * { box-sizing: border-box; }
+  :root[data-theme="dark"] {
+    --bg: #000000; --surface: #1c1c1e; --surface-2: #2c2c2e; --text: #f5f5f7; --muted: #a1a1a6; --faint: #8e8e93;
+    --line: rgba(255, 255, 255, .1); --line-strong: rgba(255, 255, 255, .2); --accent: #2997ff; --accent-hover: #47a6ff;
+    --accent-soft: rgba(41, 151, 255, .16); --ok: #30d158; --ok-soft: rgba(48, 209, 88, .16); --warn: #ffb340;
+    --warn-soft: rgba(255, 179, 64, .16); --bad: #ff6961; --bad-soft: rgba(255, 105, 97, .16);
+    --shadow: 0 0 0 1px rgba(255, 255, 255, .06); --bar: rgba(0, 0, 0, .72); --seg-on: #636366; color-scheme: dark;
+  }
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-size="large"] { zoom: 1.15; }
+  :root[data-size="larger"] { zoom: 1.3; }
+  *, ::before, ::after { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
@@ -37,6 +52,7 @@
   .hidden { display: none !important; }
 
   /* Hero */
+  #start { position: relative; }
   header.hero { text-align: center; padding: 72px 0 40px; }
   .eyebrow { color: var(--accent); font-weight: 600; font-size: 15px; margin: 0 0 10px; }
   h1 { font-size: clamp(40px, 7vw, 64px); line-height: 1.05; letter-spacing: -.035em; margin: 0 0 16px; font-weight: 700; }
@@ -189,6 +205,47 @@
   footer { color: var(--faint); font-size: 13px; text-align: center; padding: 24px 0 48px; }
   footer a { color: inherit; }
 
+
+  /* Settings dialog and after-download dialog */
+  .gear { position: absolute; top: 16px; right: 16px; }
+  .icon-btn { border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 8px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 500; }
+  .icon-btn:hover { background: var(--line); color: var(--text); }
+  .icon-btn svg { width: 20px; height: 20px; }
+  dialog { border: 0; border-radius: var(--radius); background: var(--surface); color: var(--text); padding: 0; width: min(560px, calc(100% - 32px)); max-height: calc(100% - 32px); box-shadow: 0 24px 64px rgba(0, 0, 0, .3); }
+  dialog::backdrop { background: rgba(0, 0, 0, .4); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  dialog .head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 0; }
+  dialog h2 { font-size: 22px; margin: 0; letter-spacing: -.02em; }
+  dialog .body { padding: 8px 22px 22px; }
+  .set { padding: 16px 0; border-top: 1px solid var(--line); }
+  .set:first-child { border-top: 0; }
+  .set > b { display: block; margin-bottom: 4px; }
+  .set p { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+  .choose { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .choose label { border: 2px solid var(--line-strong); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 15px; font-weight: 500; }
+  .choose label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .choose label:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .choose input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .toggle { display: flex; gap: 14px; align-items: flex-start; justify-content: space-between; cursor: pointer; }
+  ol.how { margin: 8px 0 0; padding-left: 22px; }
+  ol.how li { margin: 8px 0; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .todo-actions { margin: 0 4px 14px; }
+  .btn.plain { background: var(--line); color: var(--text); }
+  .btn.plain:hover { background: var(--line-strong); }
+  .pill { border: 0; cursor: pointer; }
+  .decision.auto .issue::after { content: "Picked for you"; color: var(--accent); background: var(--accent-soft); }
+  .options .rec { display: inline-block; font-size: 12px; font-weight: 600; color: var(--ok); background: var(--ok-soft); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 1px; }
+
+  @media print {
+    /* Always print dark text on white paper, whatever look is chosen on screen. */
+    :root, :root[data-theme] { --bg: #fff; --surface: #fff; --surface-2: #fff; --text: #000; --muted: #444; --faint: #555; --line: #ccc; --warn: #8a4b00; --warn-soft: #fff4e0; color-scheme: light; zoom: 1; }
+    body { background: #fff; color: #000; }
+    #start, .bar, .seg, .panel:not(#p-notes), footer, .toast, .tick, .todo-actions, dialog { display: none !important; }
+    #p-notes { display: block !important; }
+    .card { box-shadow: none; border: 1px solid #ccc; }
+    .note { break-inside: avoid; }
+  }
+
   @media (max-width: 720px) {
     .note { grid-template-columns: 1fr; }
     .note .tick { grid-column: 1; grid-row: auto; justify-self: start; margin-top: 8px; }
@@ -210,6 +267,7 @@
 <body>
 
 <div id="start">
+  <button class="icon-btn gear" type="button" data-settings><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Settings</button>
   <header class="hero wrap">
     <p class="eyebrow">Qualtrics to LimeSurvey</p>
     <h1>Move your survey.<br>Keep its logic.</h1>
@@ -243,7 +301,8 @@
   <div class="bar">
     <div class="wrap">
       <div class="file"><b id="fname"></b><span><span class="onpc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Only on this computer</span> · <span id="fstats"></span></span></div>
-      <span id="status" class="pill" aria-live="polite"></span>
+      <button id="status" class="pill" type="button" aria-live="polite"></button>
+      <button class="icon-btn" type="button" data-settings aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
       <button class="btn ghost" id="restart" type="button">Other file</button>
       <button class="btn" id="export" type="button">Download for LimeSurvey</button>
     </div>
@@ -257,7 +316,7 @@
     </div>
 
     <section class="panel" role="tabpanel" id="p-decisions" aria-labelledby="tab-decisions">
-      <div class="intro"><span>LimeSurvey cannot do everything Qualtrics does. For each item below, read what it does now in Qualtrics, then pick what should happen in LimeSurvey. Not sure? The first option is usually the safest.</span><button class="btn small ghost" id="suggest" type="button">Pick the first option for all</button></div>
+      <div class="intro"><span>LimeSurvey cannot do everything Qualtrics does. For each item below, read what it does now in Qualtrics, then pick what should happen in LimeSurvey. Not sure? Pick the one marked Recommended.</span><button class="btn small ghost" id="suggest" type="button">Pick the recommended option for all</button></div>
       <div id="decisions"></div>
     </section>
 
@@ -284,6 +343,45 @@
   <footer>Your file is converted on this computer and never uploaded. <a href="https://github.com/PeterSlijkhuis/QualtricsToLimeSurvey">How it works</a></footer>
 </div>
 
+<dialog id="settings" aria-labelledby="settings-title">
+  <div class="head"><h2 id="settings-title">Settings</h2><button class="icon-btn" type="button" data-close>Close</button></div>
+  <div class="body">
+    <div class="set"><b>Look</b>
+      <div class="choose" role="radiogroup" aria-label="Look">
+        <label><input type="radio" name="theme" value="auto">Same as my device</label>
+        <label><input type="radio" name="theme" value="light">Light</label>
+        <label><input type="radio" name="theme" value="dark">Dark</label>
+      </div>
+    </div>
+    <div class="set"><b>Text size</b>
+      <div class="choose" role="radiogroup" aria-label="Text size">
+        <label><input type="radio" name="size" value="normal">Normal</label>
+        <label><input type="radio" name="size" value="large">Large</label>
+        <label><input type="radio" name="size" value="larger">Extra large</label>
+      </div>
+    </div>
+    <div class="set"><label class="toggle"><span><b>Answer the choices for me</b><p>Picks the recommended option for every choice, so you can download straight away. You can still look at each one and change it.</p></span><span class="switch"><input type="checkbox" id="s-auto"><span></span></span></label></div>
+    <div class="set"><label class="toggle"><span><b>Remember my choices on this computer</b><p>When you open the same survey again, your choices, question changes and ticked to-dos come back. Only your choices are kept, in this browser. The survey file itself is never stored.</p></span><span class="switch"><input type="checkbox" id="s-remember"><span></span></span></label>
+      <div class="actions"><button class="btn small plain" type="button" id="forget">Forget everything I saved</button></div>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="done" aria-labelledby="done-title">
+  <div class="head"><h2 id="done-title">Saved. Now put it into LimeSurvey</h2><button class="icon-btn" type="button" data-close>Close</button></div>
+  <div class="body">
+    <p>The file <b id="done-name"></b> is in your Downloads folder.</p>
+    <ol class="how">
+      <li>Log in to LimeSurvey.</li>
+      <li>Click <b>Create survey</b> (or the plus sign), then the <b>Import</b> tab.</li>
+      <li>Click <b>Browse</b> and pick the downloaded file.</li>
+      <li>Click <b>Import survey</b>. Your survey now appears in the survey list.</li>
+    </ol>
+    <div id="done-todo"></div>
+    <div class="actions" id="done-actions"></div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status"></div>
 
 <script type="module">
@@ -291,28 +389,73 @@
 
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const state = { name: '', text: '', choices: {}, edits: {}, title: '', tab: 'decisions', result: null, order: [], ticked: new Set() };
+  const state = { name: '', text: '', key: '', choices: {}, edits: {}, title: '', tab: 'decisions', result: null, order: [], ticked: new Set(), auto: new Set() };
+
+  // Browser storage can be blocked (private windows, strict settings); the page then simply does not remember.
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+    clear() { try { for (const k of Object.keys(localStorage)) if (k.startsWith('q2l')) localStorage.removeItem(k); } catch {} },
+  };
+  const settings = { theme: 'auto', size: 'normal', auto: true, remember: true, ...store.get('q2l-settings') };
+
+  function applySettings() {
+    const root = document.documentElement;
+    if (settings.theme === 'auto') delete root.dataset.theme; else root.dataset.theme = settings.theme;
+    if (settings.size === 'normal') delete root.dataset.size; else root.dataset.size = settings.size;
+    store.set('q2l-settings', settings);
+  }
+
+  // Explains in plain words why a file cannot be opened, based on what it really contains.
+  function whyNot(file, text, err) {
+    const n = file.name, head = text.slice(0, 5);
+    if (/\.lss$/i.test(n) || /<\?xml|<document/i.test(text.slice(0, 200))) return `"${n}" is already a LimeSurvey file. You can import it into LimeSurvey directly; this page is for Qualtrics files (ending in .qsf).`;
+    if (head.startsWith('%PDF')) return `"${n}" is a PDF. Please choose the survey file you exported from Qualtrics; it ends in .qsf.`;
+    if (head.startsWith('PK')) return `"${n}" is a Word, Excel or zip file. Please choose the survey file you exported from Qualtrics; it ends in .qsf.`;
+    if (/\.(csv|tsv|sav|xlsx?)$/i.test(n)) return `"${n}" holds survey answers, not the survey itself. In Qualtrics, open the survey, click Tools, Import/Export, Export survey, and choose that .qsf file here.`;
+    if (/SurveyElements missing/.test(err.message)) return `"${n}" is not a Qualtrics survey file. In Qualtrics, open the survey, click Tools, Import/Export, Export survey, and choose that .qsf file here.`;
+    return `"${n}" could not be read. It may be damaged or only partly downloaded. Please export the survey from Qualtrics again and try the new file. (Details: ${err.message})`;
+  }
 
   function load(file) {
     if (!file) return;
     file.text().then(text => {
       let first;
-      try { first = convert(text); } catch (e) { return showError(`${file.name} could not be read: ${e.message}`); }
-      Object.assign(state, { name: file.name, text, choices: {}, edits: {}, title: '', order: [], ticked: new Set() });
-      $('title').value = '';
+      try { first = convert(text); } catch (e) { return showError(whyNot(file, text, e)); }
+      let key = file.name;
+      try { key = JSON.parse(text.replace(/^\uFEFF/, '')).SurveyEntry.SurveyID || key; } catch {}
+      const saved = settings.remember ? store.get('q2l:' + key) : null;
+      Object.assign(state, { name: file.name, text, key: 'q2l:' + key, choices: {}, edits: {}, title: '', order: [], ticked: new Set(), auto: new Set() });
+      if (saved) Object.assign(state, { choices: saved.choices || {}, edits: saved.edits || {}, title: saved.title || '', ticked: new Set(saved.ticked || []), auto: new Set(saved.auto || []) });
+      $('title').value = state.title;
       $('error').classList.add('hidden');
       $('start').classList.add('hidden');
       $('review').classList.remove('hidden');
       state.tab = first.problems.length ? 'decisions' : 'questions';
       run();
       window.scrollTo(0, 0);
+      if (saved) toast('Welcome back. Your earlier choices for this survey are filled in again.');
+      else if (state.auto.size) toast(`${state.auto.size} choice${state.auto.size > 1 ? 's were' : ' was'} picked for you. Have a look on the Choices tab if you like.`);
     });
   }
 
   function showError(msg) { const e = $('error'); e.textContent = msg; e.classList.remove('hidden'); }
 
+  function save() {
+    if (settings.remember && state.key) store.set(state.key, { choices: state.choices, edits: state.edits, title: state.title, ticked: [...state.ticked], auto: [...state.auto] });
+  }
+
   function run() {
-    state.result = convert(state.text, { choices: state.choices, edits: state.edits, title: state.title });
+    const opts = () => ({ choices: state.choices, edits: state.edits, title: state.title });
+    state.result = convert(state.text, opts());
+    // Answering one choice can bring up another, so keep picking until nothing new appears.
+    for (let i = 0; settings.auto && i < 5; i++) {
+      const open = state.result.problems.filter(p => p.options.length && !state.choices[p.id]);
+      if (!open.length) break;
+      for (const p of open) { state.choices[p.id] = p.options[0].key; state.auto.add(p.id); }
+      state.result = convert(state.text, opts());
+    }
+    save();
     render();
   }
 
@@ -324,9 +467,11 @@
     const kept = r.items.filter(i => !i.skip).length;
     $('fstats').textContent = `${kept} of ${r.items.length} questions, ${r.stats.languages.join(', ')}`;
     const st = $('status');
-    if (manual.length) { st.className = 'pill bad'; st.textContent = `${manual.length} to fix in Qualtrics`; }
-    else if (open.length) { st.className = 'pill todo'; st.textContent = `${open.length} choice${open.length > 1 ? 's' : ''} to make`; }
-    else { st.className = 'pill ok'; st.textContent = 'Ready to download'; }
+    const picked = r.decided.filter(d => state.auto.has(d.id)).length;
+    if (manual.length) { st.className = 'pill bad'; st.textContent = `${manual.length} to fix in Qualtrics`; st.dataset.go = 'decisions'; }
+    else if (open.length) { st.className = 'pill todo'; st.textContent = `${open.length} choice${open.length > 1 ? 's' : ''} to make`; st.dataset.go = 'decisions'; }
+    else { st.className = 'pill ok'; st.textContent = picked ? `Ready to download (${picked} picked for you)` : 'Ready to download'; st.dataset.go = picked ? 'decisions' : 'notes'; }
+    $('export').title = manual.length ? 'First fix the items marked on the Choices tab in Qualtrics' : '';
     $('export').disabled = !r.lss;
 
     $('c-decisions').textContent = r.problems.length || '';
@@ -360,7 +505,7 @@
       return;
     }
     el.innerHTML = list.map(p => `
-      <div class="card decision${p.chosen ? ' done' : ''}" data-id="${esc(p.id)}">
+      <div class="card decision${p.chosen ? ' done' : ''}${p.chosen && state.auto.has(p.id) ? ' auto' : ''}" data-id="${esc(p.id)}">
         <div class="where">${esc(p.where)}</div>
         <div class="issue">${esc(p.issue)}</div>
         <div class="explain">
@@ -368,7 +513,7 @@
           ${p.why ? `<div><b>Why you need to choose</b>${esc(p.why)}</div>` : ''}
         </div>
         ${p.options.length
-          ? `<p class="ask" id="ask-${esc(p.id)}">What should happen in LimeSurvey?</p><div class="options" role="radiogroup" aria-labelledby="ask-${esc(p.id)}">${p.options.map(o => `<label><input type="radio" name="${esc(p.id)}" value="${esc(o.key)}"${state.choices[p.id] === o.key ? ' checked' : ''}><span class="lab">${esc(o.label)}</span>${o.impact ? `<span class="imp">${esc(o.impact)}</span>` : ''}</label>`).join('')}</div>
+          ? `<p class="ask" id="ask-${esc(p.id)}">What should happen in LimeSurvey?</p><div class="options" role="radiogroup" aria-labelledby="ask-${esc(p.id)}">${p.options.map((o, i) => `<label><input type="radio" name="${esc(p.id)}" value="${esc(o.key)}"${state.choices[p.id] === o.key ? ' checked' : ''}><span class="lab">${esc(o.label)}${i === 0 && p.options.length > 1 ? '<span class="rec">Recommended</span>' : ''}</span>${o.impact ? `<span class="imp">${esc(o.impact)}</span>` : ''}</label>`).join('')}</div>
              <details class="alt"><summary>Rather fix it in Qualtrics?</summary><p>${esc(p.fix)} Then export the survey again and open the new file here.</p></details>`
           : `<div class="manual">This cannot be solved here. ${esc(p.fix)} Then export the survey again and open the new file here.</div>`}
       </div>`).join('');
@@ -408,7 +553,8 @@
     $('notes').innerHTML = !notes.length
       ? `<div class="card empty"><b>Nothing to do after importing</b>Everything came across as it is in Qualtrics.</div>`
       : (todo.length ? `<h2 class="sub">To do in LimeSurvey after importing${left ? ` (${left} left)` : ', all done'}</h2>
-          <p class="subnote">These parts did not come across completely. Your survey still works, but you set them up yourself in LimeSurvey, after importing the file. Tick each one off when it is done; this list is only kept while this page is open.</p>
+          <p class="subnote">These parts did not come across completely. Your survey still works, but you set them up yourself in LimeSurvey, after importing the file. Tick each one off when it is done. You can also save or print this list.</p>
+          <div class="actions todo-actions">${todoButtons()}</div>
           <div class="card">${todo.map(n => card(n, true)).join('')}</div>` : '')
         + (info.length ? `<h2 class="sub">Changed for you, nothing to do</h2>
           <p class="subnote">These parts look or work a little differently in LimeSurvey. They are already handled; this is just so you know what respondents will see.</p>
@@ -437,6 +583,7 @@
   $('decisions').addEventListener('change', e => {
     if (e.target.type !== 'radio') return;
     state.choices[e.target.name] = e.target.value;
+    state.auto.delete(e.target.name);
     rerun();
   });
   $('suggest').addEventListener('click', () => {
@@ -444,10 +591,10 @@
     for (let i = 0; i < 5; i++) {
       const open = state.result.problems.filter(p => p.options.length && !state.choices[p.id]);
       if (!open.length) break;
-      for (const p of open) state.choices[p.id] = p.options[0].key;
+      for (const p of open) { state.choices[p.id] = p.options[0].key; state.auto.add(p.id); }
       run();
     }
-    toast('The first option is picked everywhere. You can still change each one.');
+    toast('The recommended option is picked everywhere. You can still change each one.');
   });
 
   let typing;
@@ -467,6 +614,7 @@
     const k = e.target.dataset.note;
     if (k === undefined) return;
     if (e.target.checked) state.ticked.add(k); else state.ticked.delete(k);
+    save();
     const y = window.scrollY;
     render();
     window.scrollTo(0, y);
@@ -493,8 +641,48 @@
     a.download = state.name.replace(/\.qsf$/i, '') + '.lss';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    toast(`Saved ${a.download} in your downloads. In LimeSurvey: Create survey, Import, then pick this file.`);
+    const todo = todoNotes();
+    $('done-name').textContent = a.download;
+    $('done-todo').innerHTML = todo.length ? `<p><b>After importing, ${todo.length} thing${todo.length > 1 ? 's' : ''} still need${todo.length > 1 ? '' : 's'} doing in LimeSurvey.</b> Save or print the list so you have it next to you.</p>` : '<p>Nothing else to do after importing.</p>';
+    $('done-actions').innerHTML = (todo.length ? todoButtons() + '<button class="btn small plain" type="button" data-go="notes">Show the list here</button>' : '') + '<button class="btn small" type="button" data-close>Done</button>';
+    $('done').showModal();
   });
+
+  const todoNotes = () => state.result.notes.filter(n => n.fix && !n.fix.startsWith('Your choice:') && !state.ticked.has(noteKey(n)));
+  const todoButtons = () => '<button class="btn small plain" type="button" data-todo="save">Save to-do list</button><button class="btn small plain" type="button" data-todo="print">Print to-do list</button>';
+  function saveTodo() {
+    const lines = [`To do in LimeSurvey after importing "${state.name}"`, '', ...todoNotes().flatMap((n, i) => [`${i + 1}. ${n.where}`, `   ${n.issue}`, `   What to do: ${n.fix}`, ''])];
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/plain' }));
+    a.download = state.name.replace(/\.qsf$/i, '') + ' - to do.txt';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.todo === 'save') saveTodo();
+    if (b.dataset.todo === 'print') { $('done').close(); state.tab = 'notes'; render(); print(); }
+    if (b.dataset.go) { b.closest('dialog')?.close(); state.tab = b.dataset.go; render(); window.scrollTo(0, 0); }
+    if (b.hasAttribute('data-close')) b.closest('dialog').close();
+    if (b.hasAttribute('data-settings')) {
+      for (const k of ['theme', 'size']) document.querySelector(`input[name="${k}"][value="${settings[k]}"]`).checked = true;
+      $('s-auto').checked = settings.auto;
+      $('s-remember').checked = settings.remember;
+      $('settings').showModal();
+    }
+  });
+  $('settings').addEventListener('change', e => {
+    const t = e.target;
+    if (t.name === 'theme' || t.name === 'size') settings[t.name] = t.value;
+    if (t.id === 's-auto') settings.auto = t.checked;
+    if (t.id === 's-remember') { settings.remember = t.checked; if (!t.checked) store.clear(); }
+    applySettings();
+    if (t.id === 's-auto' && state.result) run();
+    if (t.id === 's-remember' && t.checked) save();
+  });
+  $('forget').addEventListener('click', () => { store.clear(); store.set('q2l-settings', settings); toast('Everything this page saved on this computer is gone. Your settings are kept.'); });
+  applySettings();
   $('restart').addEventListener('click', () => {
     $('review').classList.add('hidden');
     $('start').classList.remove('hidden');
@@ -505,7 +693,9 @@
   $('file').addEventListener('change', e => load(e.target.files[0]));
   drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
   drop.addEventListener('dragleave', () => drop.classList.remove('over'));
-  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); load(e.dataTransfer.files[0]); });
+  // A file dropped anywhere on the page opens here, instead of the browser leaving this page to show it.
+  addEventListener('dragover', e => e.preventDefault());
+  addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); load(e.dataTransfer.files[0]); });
 </script>
 </body>
 </html>

@@ -27,15 +27,26 @@ and it keeps working.
 2. **Open it in the [converter](https://peterslijkhuis.github.io/QualtricsToLimeSurvey/).** Click the box and pick
    the file, or drag the file onto it.
 3. **Choices.** Some things Qualtrics does have no exact LimeSurvey equivalent. For each one the page explains, in
-   plain words, what Qualtrics does, why you need to choose, and what each option changes for respondents. Pick one
-   for each item, or click **Pick the first option for all**. You can change a choice at any time. If you would
-   rather fix it in Qualtrics, each item also says what to change there.
+   plain words, what Qualtrics does, why you need to choose, and what each option changes for respondents. The
+   recommended option is picked for you, so you can download straight away; change any of them if you like. If you
+   would rather fix something in Qualtrics, each item also says what to change there.
 4. **Questions.** Switch a question off to leave it out, change its short name (used in your results), or choose
    whether people must answer it. **Survey** lets you change the title.
-5. **Download for LimeSurvey** turns on when every choice is made. In LimeSurvey choose **Create survey**,
-   **Import**, and pick the downloaded `.lss` file.
+5. **Download for LimeSurvey.** A window then shows where to click in LimeSurvey to import the `.lss` file.
 6. **After import.** A to-do list of things to set up yourself in LimeSurvey (with where to click), and a list of
-   things that were changed for you and need nothing from you. Tick each to-do off as you go.
+   things that were changed for you and need nothing from you. Tick each to-do off as you go, or save or print the
+   list.
+
+If the file is not a Qualtrics survey (a PDF, a Word file, a results file, or a LimeSurvey file), the page says so and
+explains which file to pick instead.
+
+### Settings
+
+The **Settings** button (top right) changes the look (same as your device, light or dark) and the text size
+(normal, large, extra large). You can also turn off **Answer the choices for me**, and **Remember my choices on this
+computer**. When that is on, opening the same survey again brings back your choices, question changes and ticked
+to-dos. Only those are kept, in your browser; the survey file itself is never stored. **Forget everything I saved**
+removes them.
 
 <p align="center">
   <img src="docs/images/decisions.png" alt="Choices: what Qualtrics does, why you need to choose, and the impact of each option" width="820">
@@ -43,6 +54,11 @@ and it keeps working.
 
 <p align="center">
   <img src="docs/images/after-import.png" alt="After import: to-dos for LimeSurvey and changes that need nothing from you" width="820">
+</p>
+
+<p align="center">
+  <img src="docs/images/download.png" alt="After downloading: where to click in LimeSurvey, and the to-do list to save or print" width="400">
+  <img src="docs/images/settings.png" alt="Settings: look, text size, answer for me, remember" width="400">
 </p>
 
 <p align="center">
