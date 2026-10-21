@@ -499,7 +499,8 @@
     // Keep each decision where it first appeared, so cards do not jump around once decided.
     const list = [...r.problems, ...r.decided];
     for (const p of list) if (!state.order.includes(p.id)) state.order.push(p.id);
-    list.sort((a, b) => state.order.indexOf(a.id) - state.order.indexOf(b.id));
+    // Items only Qualtrics can fix come first: they block the download whatever is chosen.
+    list.sort((a, b) => !b.options.length - !a.options.length || state.order.indexOf(a.id) - state.order.indexOf(b.id));
     if (!list.length) {
       el.innerHTML = `<div class="card empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.6 2.5L16 9.5"/></svg><b>Nothing to decide</b>Everything in this survey has a LimeSurvey equivalent.</div>`;
       return;
@@ -509,8 +510,8 @@
         <div class="where">${esc(p.where)}</div>
         <div class="issue">${esc(p.issue)}</div>
         <div class="explain">
-          ${p.qualtrics ? `<div><b>What Qualtrics does</b>${esc(p.qualtrics)}</div>` : ''}
-          ${p.why ? `<div><b>Why you need to choose</b>${esc(p.why)}</div>` : ''}
+          ${p.qualtrics ? `<div><b>${p.options.length ? 'What Qualtrics does' : 'What is wrong'}</b>${esc(p.qualtrics)}</div>` : ''}
+          ${p.why ? `<div><b>${p.options.length ? 'Why you need to choose' : 'Why the download is blocked'}</b>${esc(p.why)}</div>` : ''}
         </div>
         ${p.options.length
           ? `<p class="ask" id="ask-${esc(p.id)}">What should happen in LimeSurvey?</p><div class="options" role="radiogroup" aria-labelledby="ask-${esc(p.id)}">${p.options.map((o, i) => `<label><input type="radio" name="${esc(p.id)}" value="${esc(o.key)}"${state.choices[p.id] === o.key ? ' checked' : ''}><span class="lab">${esc(o.label)}${i === 0 && p.options.length > 1 ? '<span class="rec">Recommended</span>' : ''}</span>${o.impact ? `<span class="imp">${esc(o.impact)}</span>` : ''}</label>`).join('')}</div>

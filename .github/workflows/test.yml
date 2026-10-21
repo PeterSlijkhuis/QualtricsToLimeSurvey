@@ -48,7 +48,10 @@ jobs:
             import { convert } from './src/qsf2lss.js';
             import fs from 'node:fs';
             for (const f of fs.readdirSync('test/fixtures').filter(f => f.endsWith('.qsf'))) {
-              const r = convert(fs.readFileSync('test/fixtures/' + f, 'utf8'));
+              // Pick the recommended option for every choice, as the page does by default.
+              const text = fs.readFileSync('test/fixtures/' + f, 'utf8'), choices = {};
+              let r = convert(text);
+              for (let i = 0; i < 5 && !r.lss; i++) { for (const p of r.problems) if (p.options.length) choices[p.id] = p.options[0].key; r = convert(text, { choices }); }
               if (!r.lss) { console.error(f, r.problems); process.exit(1); }
               fs.writeFileSync(process.env.RUNNER_TEMP + '/lss/' + f.replace(/qsf$/, 'lss'), r.lss);
             }"

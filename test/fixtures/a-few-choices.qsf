@@ -1,0 +1,347 @@
+{
+ "SurveyEntry": {
+  "SurveyID": "SV_test_some",
+  "SurveyName": "Test 2 - A few choices (employee survey)",
+  "SurveyLanguage": "EN",
+  "SurveyStatus": "Inactive"
+ },
+ "SurveyElements": [
+  {
+   "SurveyID": "SV_test_some",
+   "Element": "BL",
+   "PrimaryAttribute": "Survey Blocks",
+   "Payload": [
+    {
+     "Type": "Standard",
+     "ID": "BL_1",
+     "Description": "Work",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID1"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID2"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID3"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "ID": "BL_2",
+     "Description": "Location",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID4"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID5"
+      }
+     ]
+    },
+    {
+     "Type": "Standard",
+     "ID": "BL_3",
+     "Description": "Wrap up",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID6"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID7"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "SurveyID": "SV_test_some",
+   "Element": "FL",
+   "PrimaryAttribute": "Survey Flow",
+   "Payload": {
+    "Type": "Root",
+    "FlowID": "FL_1",
+    "Flow": [
+     {
+      "Type": "Standard",
+      "ID": "BL_1",
+      "FlowID": "FL_2"
+     },
+     {
+      "Type": "WebService",
+      "FlowID": "FL_3",
+      "URL": "https://example.com/api",
+      "Method": "GET",
+      "EditBodyParams": []
+     },
+     {
+      "Type": "Branch",
+      "FlowID": "FL_4",
+      "Description": "Office in the Netherlands",
+      "BranchLogic": {
+       "0": {
+        "0": {
+         "LogicType": "GeoIP",
+         "Operator": "Is",
+         "LeftOperand": "CountryCode",
+         "RightOperand": "NL",
+         "Type": "Expression"
+        },
+        "Type": "If"
+       },
+       "Type": "BooleanExpression"
+      },
+      "Flow": [
+       {
+        "Type": "Standard",
+        "ID": "BL_2",
+        "FlowID": "FL_5"
+       }
+      ]
+     },
+     {
+      "Type": "Standard",
+      "ID": "BL_3",
+      "FlowID": "FL_6"
+     }
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_some",
+   "Element": "SO",
+   "PrimaryAttribute": "Survey Options",
+   "Payload": {
+    "BackButton": "true",
+    "ProgressBarDisplay": "Text",
+    "SurveyProtection": "PublicSurvey"
+   }
+  },
+  {
+   "SurveyID": "SV_test_some",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID1",
+   "Payload": {
+    "QuestionDescription": "What is your role?",
+    "QuestionID": "QID1",
+    "DataExportTag": "role",
+    "QuestionText": "What is your role?",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "ON",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Manager"
+     },
+     "2": {
+      "Display": "Employee"
+     },
+     "3": {
+      "Display": "Intern"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3"
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_some",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID2",
+   "Payload": {
+    "QuestionDescription": "How do you feel about:",
+    "QuestionID": "QID2",
+    "DataExportTag": "happy",
+    "QuestionText": "How do you feel about:",
+    "QuestionType": "Matrix",
+    "Selector": "Likert",
+    "SubSelector": "SingleAnswer",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Your team"
+     },
+     "2": {
+      "Display": "Your manager"
+     },
+     "3": {
+      "Display": "Your pay"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3"
+    ],
+    "Answers": {
+     "1": {
+      "Display": "Bad"
+     },
+     "2": {
+      "Display": "OK"
+     },
+     "3": {
+      "Display": "Good"
+     }
+    },
+    "AnswerOrder": [
+     "1",
+     "2",
+     "3"
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_some",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID3",
+   "Payload": {
+    "QuestionDescription": "What would you improve?",
+    "QuestionID": "QID3",
+    "DataExportTag": "improve",
+    "QuestionText": "What would you improve?",
+    "QuestionType": "TE",
+    "Selector": "ML",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionJS": "Qualtrics.SurveyEngine.addOnload(function(){ this.hideNextButton(); setTimeout(() => this.showNextButton(), 5000); });"
+   }
+  },
+  {
+   "SurveyID": "SV_test_some",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID4",
+   "Payload": {
+    "QuestionDescription": "Which office do you work at?",
+    "QuestionID": "QID4",
+    "DataExportTag": "office",
+    "QuestionText": "Which office do you work at?",
+    "QuestionType": "MC",
+    "Selector": "SAVR",
+    "SubSelector": "TX",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "Choices": {
+     "1": {
+      "Display": "Amsterdam"
+     },
+     "2": {
+      "Display": "Utrecht"
+     },
+     "3": {
+      "Display": "Rotterdam"
+     }
+    },
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3"
+    ]
+   }
+  },
+  {
+   "SurveyID": "SV_test_some",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID5",
+   "Payload": {
+    "QuestionDescription": "How many minutes is your commute?",
+    "QuestionID": "QID5",
+    "DataExportTag": "commute",
+    "QuestionText": "How many minutes is your commute?",
+    "QuestionType": "TE",
+    "Selector": "SL",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_some",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID6",
+   "Payload": {
+    "QuestionDescription": "Timing",
+    "QuestionID": "QID6",
+    "DataExportTag": "timer",
+    "QuestionText": "Timing",
+    "QuestionType": "Timing",
+    "Selector": "PageTimer",
+    "Configuration": {
+     "MinSeconds": "0",
+     "MaxSeconds": "60"
+    },
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  },
+  {
+   "SurveyID": "SV_test_some",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID7",
+   "Payload": {
+    "QuestionDescription": "Thanks! Your role: ${q://QID1/ChoiceGroup/SelectedChoices}.",
+    "QuestionID": "QID7",
+    "DataExportTag": "bye",
+    "QuestionText": "Thanks! Your role: ${q://QID1/ChoiceGroup/SelectedChoices}.",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {},
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": []
+   }
+  }
+ ]
+}

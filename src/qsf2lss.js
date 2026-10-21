@@ -302,7 +302,7 @@ class Converter {
 
   addBlock(id, conds, rgroup) {
     const b = this.blocks[id];
-    if (!b) return this.problem(`Survey flow`, `Block ${id} is in the survey flow but missing from the file.`, 'Export the survey again from Qualtrics.');
+    if (!b) return this.problem('Survey flow', 'The survey flow points to a block of questions that is not in the file.', 'In Qualtrics, open the Survey flow, remove the empty or broken block element. If there is none, the file may be damaged.', [], { qualtrics: `The flow shows a block (${id}) whose questions are missing, usually because the block was deleted.`, why: 'Without the block there is nothing to convert at this place in the survey.' });
     if (b.Type === 'Trash') return;
     if (b.groups) {
       // A block shown again later in the flow: LimeSurvey shows a group once, so either occurrence shows it.
@@ -422,7 +422,7 @@ class Converter {
 
   addQuestion(qid, g, it) {
     let p = this.questions[qid];
-    if (!p) { this.problem(`Question ${qid}`, 'Question is listed in a block but missing from the file.', 'Export the survey again from Qualtrics.'); return null; }
+    if (!p) { this.problem(`A question in block "${strip(g.name)}"`, 'A question is listed in this block but is missing from the file.', 'In Qualtrics, open the block, check for an empty or broken question and delete it (also empty the trash).', [], { qualtrics: `The block refers to question ${qid}, but its content is not in the export.`, why: 'Without its text and answers the question cannot be built.' }); return null; }
     const where = `Question "${p.DataExportTag || qid}"`;
     const edit = this.edits[qid] || {};
     if (!this.items.some(x => x.id === qid)) {
@@ -939,9 +939,9 @@ class Converter {
       if (this.scores[id]) return compare(this.scoreExpr(id), op, this.valueExpr(it.RightOperand ?? '', { where, iter: c.iter }), where, this);
     }
     if (it.LogicType !== 'Question') {
-      const what = { GeoIP: 'the respondent\'s location, looked up from their internet address', Panel: 'information from a Qualtrics contact list', Quota: 'whether a quota is full', ScoringCategory: 'a score', Classification: 'a Qualtrics classification' }[it.LogicType] || `"${it.LogicType}"`;
+      const what = { GeoIP: 'the respondent\'s location, looked up from their internet address', Panel: 'information from a Qualtrics contact list', PanelData: 'information from a Qualtrics contact list', Quota: 'whether a quota is full', ScoringCategory: 'a score', Classification: 'a Qualtrics classification' }[it.LogicType] || `something only Qualtrics knows ("${it.LogicType}")`;
       return this.condProblem(where, `This condition depends on ${what}.`,
-        { GeoIP: 'Remove the location condition, or ask for the location in a question.', Panel: 'Remove the condition, or base it on an answer instead of the contact list.', Quota: 'Remove quota conditions; recreate the quotas in LimeSurvey.', ScoringCategory: 'Remove the condition, or base it on an answer instead of a score.', Classification: 'Remove the condition.' }[it.LogicType] || 'Replace it with a condition on an answer or a hidden field.',
+        { GeoIP: 'Remove the location condition, or ask for the location in a question.', Panel: 'Remove the condition, or base it on an answer instead of the contact list.', PanelData: 'Remove the condition, or base it on an answer instead of the contact list.', Quota: 'Remove quota conditions; recreate the quotas in LimeSurvey.', ScoringCategory: 'Remove the condition, or base it on an answer instead of a score.', Classification: 'Remove the condition.' }[it.LogicType] || 'Replace it with a condition on an answer or a hidden field.',
         { qualtrics: `Qualtrics checks ${what}${it.Description ? ` ("${strip(it.Description).trim()}")` : ''}.` });
     }
     const loc = parseLoc(it.LeftOperand || it.ChoiceLocator || '');

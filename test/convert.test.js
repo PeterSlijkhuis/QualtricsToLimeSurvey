@@ -84,3 +84,20 @@ test('real survey with loop & merge on a numeric answer converts', () => {
   assert.deepEqual(r.problems, []);
   has(r.lss, 'size.NAOK >= 20');
 });
+
+test('test surveys raise the expected number of choices', () => {
+  const count = name => convert(fixture(name)).problems.length;
+  assert.equal(count('fully-convertible.qsf'), 0);
+  assert.equal(count('a-few-choices.qsf'), 3);
+  assert.ok(count('many-choices.qsf') >= 10);
+});
+
+test('a damaged export stays blocked whatever is chosen', () => {
+  const text = readFileSync(new URL('blocked/must-fix-in-qualtrics.qsf', import.meta.url), 'utf8');
+  const first = convert(text);
+  const choices = Object.fromEntries(first.problems.filter(p => p.options.length).map(p => [p.id, p.options[0].key]));
+  const r = convert(text, { choices });
+  assert.equal(r.lss, '');
+  assert.equal(r.problems.length, 2);
+  assert.ok(r.problems.every(p => !p.options.length && p.fix));
+});
