@@ -3,81 +3,452 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>Qualtrics to LimeSurvey</title>
+<meta name="description" content="Convert a Qualtrics survey (.qsf) into a LimeSurvey survey (.lss), logic included. Runs in your browser.">
 <style>
-  :root { --bg: #f7f7f5; --card: #fff; --text: #1d1d1b; --muted: #5f5f5a; --line: #deded8; --accent: #1f6f50; --bad: #a8261b; --bad-bg: #fbeceb; --warn-bg: #f6f1e1; }
+  :root {
+    --bg: #f5f5f7; --surface: #ffffff; --surface-2: #fbfbfd; --text: #1d1d1f; --muted: #6e6e73; --faint: #86868b;
+    --line: rgba(0, 0, 0, .08); --line-strong: rgba(0, 0, 0, .16); --accent: #0071e3; --accent-hover: #0077ed;
+    --accent-soft: rgba(0, 113, 227, .1); --ok: #1d8a3a; --ok-soft: rgba(29, 138, 58, .12); --warn: #b25000;
+    --warn-soft: rgba(255, 149, 0, .14); --bad: #d70015; --bad-soft: rgba(255, 59, 48, .1);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .06); --bar: rgba(245, 245, 247, .78);
+    --radius: 18px; --radius-s: 12px; --seg-on: #ffffff;
+  }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #161615; --card: #20201e; --text: #ececea; --muted: #a5a59f; --line: #393935; --accent: #5cc29a; --bad: #ff8a80; --bad-bg: #3a1d1b; --warn-bg: #312b1a; }
+    :root {
+      --bg: #000000; --surface: #1c1c1e; --surface-2: #2c2c2e; --text: #f5f5f7; --muted: #a1a1a6; --faint: #8e8e93;
+      --line: rgba(255, 255, 255, .1); --line-strong: rgba(255, 255, 255, .2); --accent: #2997ff; --accent-hover: #47a6ff;
+      --accent-soft: rgba(41, 151, 255, .16); --ok: #30d158; --ok-soft: rgba(48, 209, 88, .16); --warn: #ffb340;
+      --warn-soft: rgba(255, 179, 64, .16); --bad: #ff6961; --bad-soft: rgba(255, 105, 97, .16);
+      --shadow: 0 0 0 1px rgba(255, 255, 255, .06); --bar: rgba(0, 0, 0, .72); --seg-on: #636366;
+    }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
-  h1 { font-size: 1.6rem; margin: 0 0 4px; }
-  p.lead { color: var(--muted); margin: 0 0 24px; }
-  label.drop { display: block; border: 2px dashed var(--line); border-radius: 12px; background: var(--card); padding: 40px 16px; text-align: center; cursor: pointer; }
-  label.drop.over, label.drop:focus-within { border-color: var(--accent); }
-  label.drop strong { color: var(--accent); }
-  input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
-  #out { margin-top: 24px; }
-  .status { padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; }
-  .status.bad { background: var(--bad-bg); color: var(--bad); }
-  .status.ok { background: var(--card); border: 1px solid var(--line); }
-  a.button { display: inline-block; background: var(--accent); color: #fff; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 8px; }
-  @media (prefers-color-scheme: dark) { a.button { color: #10241b; } }
-  h2 { font-size: 1.1rem; margin: 24px 0 8px; }
-  ul.items { list-style: none; padding: 0; margin: 0; }
-  ul.items li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; }
-  ul.items.notes li { background: var(--warn-bg); }
-  .where { font-weight: 600; }
-  .fix { color: var(--muted); margin-top: 4px; }
-  .fix::before { content: "Change: "; font-weight: 600; }
-  footer { color: var(--muted); font-size: .9rem; margin-top: 40px; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; letter-spacing: -.01em;
+  }
+  button, input, select { font: inherit; color: inherit; letter-spacing: inherit; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+  .hidden { display: none !important; }
+
+  /* Hero */
+  header.hero { text-align: center; padding: 72px 0 40px; }
+  .eyebrow { color: var(--accent); font-weight: 600; font-size: 15px; margin: 0 0 10px; }
+  h1 { font-size: clamp(40px, 7vw, 64px); line-height: 1.05; letter-spacing: -.035em; margin: 0 0 16px; font-weight: 700; }
+  .lead { font-size: clamp(19px, 2.4vw, 22px); color: var(--muted); max-width: 640px; margin: 0 auto; line-height: 1.4; }
+
+  /* Drop zone */
+  .drop {
+    display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; cursor: pointer;
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 48px 24px;
+    border: 2px dashed transparent; transition: border-color .2s, transform .2s, background .2s;
+  }
+  .drop:hover { transform: translateY(-1px); }
+  .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .drop:focus-within { border-color: var(--accent); }
+  .drop svg { width: 52px; height: 52px; color: var(--accent); }
+  .drop .title { font-size: 21px; font-weight: 600; }
+  .drop .sub { color: var(--muted); font-size: 15px; }
+  .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 32px 0 0; padding: 0; list-style: none; }
+  .steps li { background: var(--surface); border-radius: var(--radius-s); padding: 18px; box-shadow: var(--shadow); }
+  .steps b { display: block; font-size: 15px; margin-bottom: 4px; }
+  .steps span { color: var(--muted); font-size: 15px; }
+  .privacy { display: flex; gap: 8px; justify-content: center; align-items: center; color: var(--muted); font-size: 14px; margin: 20px 0 0; }
+  .privacy svg { width: 16px; height: 16px; }
+
+  /* Toolbar */
+  .bar {
+    position: sticky; top: 0; z-index: 10; background: var(--bar); border-bottom: 1px solid var(--line);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  }
+  .bar .wrap { display: flex; align-items: center; gap: 12px; min-height: 64px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+  .file { flex: 1 1 220px; min-width: 0; }
+  .file b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 17px; }
+  .file span { color: var(--muted); font-size: 13px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .pill.ok { color: var(--ok); background: var(--ok-soft); }
+  .pill.todo { color: var(--warn); background: var(--warn-soft); }
+  .pill.bad { color: var(--bad); background: var(--bad-soft); }
+  .btn {
+    border: 0; border-radius: 999px; padding: 10px 20px; font-weight: 600; font-size: 15px; cursor: pointer;
+    background: var(--accent); color: #fff; transition: background .15s, opacity .15s, transform .1s; white-space: nowrap;
+  }
+  .btn:hover { background: var(--accent-hover); }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+  .btn.ghost { background: transparent; color: var(--accent); padding: 10px 12px; }
+  .btn.ghost:hover { background: var(--accent-soft); }
+  .btn.small { padding: 6px 14px; font-size: 14px; }
+
+  /* Tabs (segmented control) */
+  .seg { display: inline-flex; background: var(--line); border-radius: 10px; padding: 3px; margin: 28px 0 20px; max-width: 100%; overflow-x: auto; }
+  .seg button { border: 0; background: transparent; border-radius: 8px; padding: 7px 16px; font-size: 15px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+  .seg button[aria-selected="true"] { background: var(--seg-on); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); font-weight: 600; }
+  .seg .count { color: var(--faint); font-weight: 500; margin-left: 4px; }
+
+  section.panel { padding-bottom: 64px; }
+  .intro { color: var(--muted); margin: 0 0 18px; font-size: 15px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+  .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .card + .card { margin-top: 14px; }
+
+  /* Decisions */
+  .decision { padding: 20px 22px; }
+  .decision .where { font-size: 13px; color: var(--faint); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .decision .issue { font-weight: 600; margin-bottom: 4px; }
+  .decision .fix { color: var(--muted); font-size: 15px; margin-bottom: 14px; }
+  .decision.done .issue::after { content: "Decided"; margin-left: 10px; font-size: 12px; font-weight: 600; color: var(--ok); background: var(--ok-soft); border-radius: 999px; padding: 2px 8px; vertical-align: 2px; }
+  .options { display: flex; flex-wrap: wrap; gap: 8px; }
+  .options label {
+    display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line-strong); border-radius: 999px;
+    padding: 8px 14px; font-size: 15px; cursor: pointer; transition: background .15s, border-color .15s;
+  }
+  .options label:hover { border-color: var(--accent); }
+  .options input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .options input:checked + span { font-weight: 600; }
+  .options label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .options label:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .manual { font-size: 15px; color: var(--bad); font-weight: 600; }
+  .empty { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty svg { width: 44px; height: 44px; color: var(--ok); margin-bottom: 8px; }
+  .empty b { display: block; color: var(--text); font-size: 19px; margin-bottom: 4px; }
+
+  /* Questions (grouped inset list) */
+  .search { width: 100%; max-width: 320px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 10px; padding: 8px 12px; font-size: 15px; }
+  .block-name { font-size: 13px; color: var(--faint); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin: 22px 4px 8px; }
+  .row { display: grid; grid-template-columns: auto minmax(0, 1fr) 150px 150px; gap: 14px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); }
+  .row:first-child { border-top: 0; }
+  .row.off .qtext { opacity: .4; text-decoration: line-through; }
+  .qtext b { font-size: 15px; font-weight: 600; }
+  .qtext span { display: block; color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row input[type=text], .row select, .field input {
+    width: 100%; border: 1px solid var(--line-strong); background: var(--surface-2); border-radius: 8px; padding: 7px 10px; font-size: 15px;
+  }
+  .row input[type=text]:disabled, .row select:disabled { opacity: .4; }
+  .switch { position: relative; width: 51px; height: 31px; flex: none; }
+  .switch input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; z-index: 1; }
+  .switch span { position: absolute; inset: 0; background: var(--line-strong); border-radius: 999px; transition: background .2s; }
+  .switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, .2); transition: transform .2s; }
+  .switch input:checked + span { background: var(--ok); }
+  .switch input:checked + span::after { transform: translateX(20px); }
+  .switch input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .lbl { display: none; }
+
+  /* Notes */
+  .note { padding: 16px 22px; border-top: 1px solid var(--line); }
+  .note:first-child { border-top: 0; }
+  .note .where { font-size: 13px; color: var(--faint); font-weight: 600; }
+  .note .fix { color: var(--muted); font-size: 15px; }
+
+  /* Settings */
+  .field { padding: 20px 22px; }
+  .field label { display: block; font-weight: 600; margin-bottom: 8px; }
+  .field p { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+  .stats div { padding: 16px 22px; }
+  .stats b { display: block; font-size: 28px; letter-spacing: -.02em; }
+  .stats span { color: var(--muted); font-size: 14px; }
+
+  .error { background: var(--bad-soft); color: var(--bad); border-radius: var(--radius-s); padding: 14px 18px; margin-top: 16px; font-weight: 500; }
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    background: var(--text); color: var(--bg); border-radius: 999px; padding: 12px 20px; font-size: 15px; font-weight: 500;
+    transition: opacity .25s, transform .25s; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); max-width: calc(100% - 32px); text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  footer { color: var(--faint); font-size: 13px; text-align: center; padding: 24px 0 48px; }
+  footer a { color: inherit; }
+
+  @media (max-width: 720px) {
+    header.hero { padding: 48px 0 28px; }
+    .steps { grid-template-columns: 1fr; }
+    .row { grid-template-columns: auto minmax(0, 1fr); }
+    .row .code, .row .req { grid-column: 2; }
+    .lbl { display: block; font-size: 12px; color: var(--faint); margin-bottom: 2px; }
+    .stats { grid-template-columns: 1fr; }
+    .file { flex-basis: 100%; }
+    .seg { display: flex; width: 100%; }
+    .seg button { flex: 1; padding: 7px 6px; font-size: 14px; }
+    .bar .btn { padding: 8px 14px; font-size: 14px; }
+    #status { margin-right: auto; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
-<main>
-  <h1>Qualtrics to LimeSurvey</h1>
-  <p class="lead">Converts a Qualtrics survey export (.qsf) into a LimeSurvey survey file (.lss), including display and skip logic, survey flow branches, randomizers, embedded data, piped text and loops. Your file never leaves your computer.</p>
-  <label class="drop" id="drop">
-    <input type="file" id="file" accept=".qsf,application/json">
-    <strong>Choose a .qsf file</strong> or drop it here
-  </label>
-  <div id="out" aria-live="polite"></div>
-  <footer>In Qualtrics: Survey &gt; Tools &gt; Import/Export &gt; Export survey. In LimeSurvey: Create survey &gt; Import, then choose the .lss file.</footer>
-</main>
+
+<div id="start">
+  <header class="hero wrap">
+    <p class="eyebrow">Qualtrics to LimeSurvey</p>
+    <h1>Move your survey.<br>Keep its logic.</h1>
+    <p class="lead">Turn a Qualtrics export into a LimeSurvey survey, with display logic, branches, loops, piping, scoring and quotas intact.</p>
+  </header>
+  <main class="wrap">
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept=".qsf,application/json">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      <span class="title">Choose a .qsf file</span>
+      <span class="sub">or drop it here</span>
+    </label>
+    <div id="error" class="error hidden" role="alert"></div>
+    <ol class="steps">
+      <li><b>1. Export</b><span>In Qualtrics: Survey, Tools, Import/Export, Export survey.</span></li>
+      <li><b>2. Review</b><span>Decide how to handle anything LimeSurvey cannot do, and adjust questions.</span></li>
+      <li><b>3. Import</b><span>In LimeSurvey: Create survey, Import, then choose the .lss file.</span></li>
+    </ol>
+    <p class="privacy">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      Your file never leaves your computer. Everything runs in this page.
+    </p>
+  </main>
+</div>
+
+<div id="review" class="hidden">
+  <div class="bar">
+    <div class="wrap">
+      <div class="file"><b id="fname"></b><span id="fstats"></span></div>
+      <span id="status" class="pill" aria-live="polite"></span>
+      <button class="btn ghost" id="restart" type="button">New file</button>
+      <button class="btn" id="export" type="button">Export .lss</button>
+    </div>
+  </div>
+  <main class="wrap">
+    <div class="seg" role="tablist" aria-label="Review">
+      <button role="tab" id="tab-decisions" aria-controls="p-decisions">Decisions<span class="count" id="c-decisions"></span></button>
+      <button role="tab" id="tab-questions" aria-controls="p-questions">Questions<span class="count" id="c-questions"></span></button>
+      <button role="tab" id="tab-notes" aria-controls="p-notes">Notes<span class="count" id="c-notes"></span></button>
+      <button role="tab" id="tab-survey" aria-controls="p-survey">Survey</button>
+    </div>
+
+    <section class="panel" role="tabpanel" id="p-decisions" aria-labelledby="tab-decisions">
+      <div class="intro"><span>These parts have no exact LimeSurvey equivalent. Pick how each one should be converted.</span><button class="btn small ghost" id="suggest" type="button">Use the first option everywhere</button></div>
+      <div id="decisions"></div>
+    </section>
+
+    <section class="panel" role="tabpanel" id="p-questions" aria-labelledby="tab-questions">
+      <div class="intro"><span>Switch questions off to leave them out, rename their LimeSurvey codes or change whether an answer is required.</span><input class="search" id="search" type="search" placeholder="Search questions" aria-label="Search questions"></div>
+      <div id="questions"></div>
+    </section>
+
+    <section class="panel" role="tabpanel" id="p-notes" aria-labelledby="tab-notes">
+      <div class="intro"><span>Converted, with a visible difference. Nothing to decide here.</span></div>
+      <div class="card" id="notes"></div>
+    </section>
+
+    <section class="panel" role="tabpanel" id="p-survey" aria-labelledby="tab-survey">
+      <div class="card">
+        <div class="field">
+          <label for="title">Survey title</label>
+          <input id="title" type="text" autocomplete="off">
+          <p>Shown to respondents and in the LimeSurvey survey list.</p>
+        </div>
+        <div class="stats" id="stats"></div>
+      </div>
+    </section>
+  </main>
+  <footer>Runs in your browser. <a href="https://github.com/PeterSlijkhuis/QualtricsToLimeSurvey">Source and documentation</a></footer>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
 <script type="module">
   import { convert } from './src/qsf2lss.js';
-  const out = document.getElementById('out');
-  const drop = document.getElementById('drop');
-  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const list = (items, cls) => `<ul class="items ${cls}">${items.map(i => `<li><div class="where">${esc(i.where)}</div><div>${esc(i.issue)}</div>${i.fix ? `<div class="fix">${esc(i.fix)}</div>` : ''}</li>`).join('')}</ul>`;
 
-  async function handle(file) {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const state = { name: '', text: '', choices: {}, edits: {}, title: '', tab: 'decisions', result: null, order: [] };
+
+  function load(file) {
     if (!file) return;
-    let r;
-    try {
-      r = convert(await file.text());
-    } catch (e) {
-      out.innerHTML = `<div class="status bad">Could not read ${esc(file.name)}: ${esc(e.message)}</div>`;
-      return;
-    }
-    let html = '';
-    if (r.problems.length) {
-      html += `<div class="status bad"><strong>Not converted.</strong> ${r.problems.length} part(s) of this survey cannot be converted faithfully. Change them in Qualtrics, export again and retry.</div>`;
-      html += `<h2>Problems</h2>` + list(r.problems, 'problems');
-    } else {
-      const url = URL.createObjectURL(new Blob([r.lss], { type: 'application/xml' }));
-      const name = file.name.replace(/\.qsf$/i, '') + '.lss';
-      html += `<div class="status ok"><strong>Converted:</strong> ${r.stats.questions} questions in ${r.stats.groups} groups, languages ${esc(r.stats.languages.join(', '))}.<br><a class="button" href="${url}" download="${esc(name)}">Download ${esc(name)}</a></div>`;
-    }
-    if (r.notes.length) html += `<h2>Good to know</h2>` + list(r.notes, 'notes');
-    out.innerHTML = html;
+    file.text().then(text => {
+      let first;
+      try { first = convert(text); } catch (e) { return showError(`${file.name} could not be read: ${e.message}`); }
+      Object.assign(state, { name: file.name, text, choices: {}, edits: {}, title: '', order: [] });
+      $('title').value = '';
+      $('error').classList.add('hidden');
+      $('start').classList.add('hidden');
+      $('review').classList.remove('hidden');
+      state.tab = first.problems.length ? 'decisions' : 'questions';
+      run();
+      window.scrollTo(0, 0);
+    });
   }
 
-  document.getElementById('file').addEventListener('change', e => handle(e.target.files[0]));
+  function showError(msg) { const e = $('error'); e.textContent = msg; e.classList.remove('hidden'); }
+
+  function run() {
+    state.result = convert(state.text, { choices: state.choices, edits: state.edits, title: state.title });
+    render();
+  }
+
+  function render() {
+    const r = state.result;
+    const open = r.problems.filter(p => p.options.length);
+    const manual = r.problems.filter(p => !p.options.length);
+    $('fname').textContent = state.name;
+    const kept = r.items.filter(i => !i.skip).length;
+    $('fstats').textContent = `${kept} of ${r.items.length} questions, ${r.stats.languages.join(', ')}`;
+    const st = $('status');
+    if (manual.length) { st.className = 'pill bad'; st.textContent = `${manual.length} to fix in Qualtrics`; }
+    else if (open.length) { st.className = 'pill todo'; st.textContent = `${open.length} decision${open.length > 1 ? 's' : ''} left`; }
+    else { st.className = 'pill ok'; st.textContent = 'Ready to export'; }
+    $('export').disabled = !r.lss;
+
+    $('c-decisions').textContent = r.problems.length || '';
+    $('c-questions').textContent = r.items.length;
+    $('c-notes').textContent = r.notes.filter(n => !n.fix.startsWith('Your choice:')).length;
+    $('suggest').classList.toggle('hidden', !open.length);
+    renderDecisions(r);
+    renderQuestions(r);
+    renderNotes(r.notes.filter(n => !n.fix.startsWith('Your choice:')));
+    $('title').placeholder = titleDefault();
+    $('stats').innerHTML = `<div><b>${kept}</b><span>questions included</span></div><div><b>${r.stats.groups}</b><span>LimeSurvey groups</span></div><div><b>${r.stats.languages.length}</b><span>language${r.stats.languages.length > 1 ? 's' : ''}</span></div>`;
+    for (const t of ['decisions', 'questions', 'notes', 'survey']) {
+      $(`tab-${t}`).setAttribute('aria-selected', String(state.tab === t));
+      $(`p-${t}`).classList.toggle('hidden', state.tab !== t);
+    }
+  }
+
+  function titleDefault() {
+    try { return (JSON.parse(state.text.replace(/^﻿/, '')).SurveyEntry || {}).SurveyName || 'Survey'; } catch { return 'Survey'; }
+  }
+
+  function renderDecisions(r) {
+    const el = $('decisions');
+    // Keep each decision where it first appeared, so cards do not jump around once decided.
+    const list = [...r.problems, ...r.decided];
+    for (const p of list) if (!state.order.includes(p.id)) state.order.push(p.id);
+    list.sort((a, b) => state.order.indexOf(a.id) - state.order.indexOf(b.id));
+    if (!list.length) {
+      el.innerHTML = `<div class="card empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.6 2.5L16 9.5"/></svg><b>Nothing to decide</b>Everything in this survey has a LimeSurvey equivalent.</div>`;
+      return;
+    }
+    el.innerHTML = list.map(p => `
+      <div class="card decision${p.chosen ? ' done' : ''}" data-id="${esc(p.id)}">
+        <div class="where">${esc(p.where)}</div>
+        <div class="issue">${esc(p.issue)}</div>
+        <div class="fix">In Qualtrics: ${esc(p.fix)}</div>
+        ${p.options.length
+          ? `<div class="options" role="radiogroup" aria-label="${esc(p.where)}">${p.options.map(o => `<label><input type="radio" name="${esc(p.id)}" value="${esc(o.key)}"${state.choices[p.id] === o.key ? ' checked' : ''}><span>${esc(o.label)}</span></label>`).join('')}</div>`
+          : `<div class="manual">Change this in Qualtrics, export again and upload the new file.</div>`}
+      </div>`).join('');
+  }
+
+  function renderQuestions(r) {
+    const q = $('search').value.trim().toLowerCase();
+    const items = r.items.filter(i => !q || `${i.code} ${i.text} ${i.type}`.toLowerCase().includes(q));
+    if (!items.length) { $('questions').innerHTML = `<div class="card empty">${r.items.length ? 'No questions match your search.' : 'This survey has no questions.'}</div>`; return; }
+    const blocks = [];
+    for (const i of items) {
+      if (!blocks.length || blocks[blocks.length - 1].name !== i.block) blocks.push({ name: i.block, items: [] });
+      blocks[blocks.length - 1].items.push(i);
+    }
+    const req = { N: 'Optional', S: 'Requested', Y: 'Required' };
+    $('questions').innerHTML = blocks.map(b => `<div class="block-name">${esc(b.name)}</div><div class="card">${b.items.map(i => {
+      const e = state.edits[i.id] || {};
+      const m = e.mandatory || i.mandatory;
+      return `<div class="row${e.skip ? ' off' : ''}" data-id="${esc(i.id)}">
+        <label class="switch" title="Include this question"><input type="checkbox" data-k="include" aria-label="Include ${esc(i.code)}"${e.skip ? '' : ' checked'}><span></span></label>
+        <div class="qtext"><b>${esc(i.code)}</b> <small style="color:var(--faint)">${esc(i.type)}</small><span>${esc(i.text) || '&nbsp;'}</span></div>
+        <div class="code"><span class="lbl">Code</span><input type="text" data-k="code" value="${esc(e.code || '')}" placeholder="${esc(i.lsCode || i.code)}" aria-label="LimeSurvey code for ${esc(i.code)}"${e.skip ? ' disabled' : ''}></div>
+        <div class="req"><span class="lbl">Answer</span><select data-k="mandatory" aria-label="Answer required for ${esc(i.code)}"${e.skip ? ' disabled' : ''}>${Object.entries(req).map(([k, v]) => `<option value="${k}"${m === k ? ' selected' : ''}>${v}</option>`).join('')}</select></div>
+      </div>`;
+    }).join('')}</div>`).join('');
+  }
+
+  function renderNotes(notes) {
+    $('notes').innerHTML = notes.length
+      ? notes.map(n => `<div class="note"><div class="where">${esc(n.where)}</div><div>${esc(n.issue)}</div>${n.fix ? `<div class="fix">${esc(n.fix)}</div>` : ''}</div>`).join('')
+      : `<div class="empty">Nothing to mention.</div>`;
+  }
+
+  // Keeps focus and scroll position while the panel is re-rendered after an edit.
+  function rerun() {
+    const a = document.activeElement;
+    const row = a && a.closest('[data-id]');
+    const key = row && [row.dataset.id, a.dataset.k || a.value];
+    const y = window.scrollY;
+    run();
+    window.scrollTo(0, y);
+    if (key) {
+      const again = document.querySelector(`[data-id="${CSS.escape(key[0])}"] ${a.dataset.k ? `[data-k="${a.dataset.k}"]` : `input[value="${CSS.escape(key[1])}"]`}`);
+      if (again) { again.focus(); if (again.type === 'text') again.setSelectionRange(again.value.length, again.value.length); }
+    }
+  }
+
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  $('decisions').addEventListener('change', e => {
+    if (e.target.type !== 'radio') return;
+    state.choices[e.target.name] = e.target.value;
+    rerun();
+  });
+  $('suggest').addEventListener('click', () => {
+    // Resolving one problem can reveal another, so repeat until nothing new appears.
+    for (let i = 0; i < 5; i++) {
+      const open = state.result.problems.filter(p => p.options.length && !state.choices[p.id]);
+      if (!open.length) break;
+      for (const p of open) state.choices[p.id] = p.options[0].key;
+      run();
+    }
+    toast('First option chosen for every decision. You can still change each one.');
+  });
+
+  let typing;
+  $('questions').addEventListener('input', e => {
+    const row = e.target.closest('[data-id]');
+    if (!row) return;
+    const id = row.dataset.id, k = e.target.dataset.k;
+    const ed = state.edits[id] = state.edits[id] || {};
+    if (k === 'include') ed.skip = !e.target.checked;
+    if (k === 'mandatory') ed.mandatory = e.target.value;
+    if (k === 'code') ed.code = e.target.value.replace(/[^A-Za-z0-9]/g, '');
+    if (k === 'code') { e.target.value = ed.code; clearTimeout(typing); typing = setTimeout(rerun, 350); }
+    else rerun();
+  });
+  $('search').addEventListener('input', () => renderQuestions(state.result));
+  $('title').addEventListener('input', e => { state.title = e.target.value; clearTimeout(typing); typing = setTimeout(rerun, 350); });
+
+  for (const t of ['decisions', 'questions', 'notes', 'survey']) $(`tab-${t}`).addEventListener('click', () => { state.tab = t; render(); });
+  document.querySelector('.seg').addEventListener('keydown', e => {
+    const tabs = ['decisions', 'questions', 'notes', 'survey'];
+    const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    if (!d) return;
+    state.tab = tabs[(tabs.indexOf(state.tab) + d + tabs.length) % tabs.length];
+    render();
+    $(`tab-${state.tab}`).focus();
+  });
+
+  $('export').addEventListener('click', () => {
+    const r = state.result;
+    if (!r.lss) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([r.lss], { type: 'application/xml' }));
+    a.download = state.name.replace(/\.qsf$/i, '') + '.lss';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast(`Saved ${a.download}. In LimeSurvey: Create survey, Import.`);
+  });
+  $('restart').addEventListener('click', () => {
+    $('review').classList.add('hidden');
+    $('start').classList.remove('hidden');
+    $('file').value = '';
+  });
+
+  const drop = $('drop');
+  $('file').addEventListener('change', e => load(e.target.files[0]));
   drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
   drop.addEventListener('dragleave', () => drop.classList.remove('over'));
-  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); handle(e.dataTransfer.files[0]); });
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); load(e.dataTransfer.files[0]); });
 </script>
 </body>
 </html>

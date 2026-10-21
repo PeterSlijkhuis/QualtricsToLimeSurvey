@@ -1,10 +1,18 @@
 // Converts a Qualtrics survey export (.qsf, JSON) into a LimeSurvey survey structure (.lss, XML).
-// Runs unchanged in the browser and in Node. Entry point: convert(qsfTextOrObject).
+// Runs unchanged in the browser and in Node. Entry point: convert(qsfTextOrObject, settings).
 //
-// Result: { lss, problems, notes, stats }
-//   problems: things that cannot be converted faithfully. When any exist, the .lss must not be used.
+// settings (all optional):
+//   choices: { problemId: optionKey }  how to resolve a problem, picked from that problem's options
+//   edits:   { QID: { skip, code, mandatory } }  leave a question out, rename its code, or set "Y"/"S"/"N"
+//   title:   survey title
+//
+// Result: { lss, problems, decided, notes, items, stats }
+//   problems: things that cannot be converted faithfully. While any remain, lss is empty. Each has an id and
+//             options; passing { choices: { [id]: option.key } } resolves it (it then moves to decided, with `chosen`,
+//             and the choice is listed as a note).
 //   notes:    things that were converted with a visible difference (layout, wording, data columns).
-// Each entry is { where, issue, fix }.
+//   items:    the survey's questions, in flow order, for editing: { id, code, type, text, block, mandatory, skip }
+// Problems and notes are { where, issue, fix }.
 
 const LANGS = {
   EN: 'en', 'EN-GB': 'en', 'EN-US': 'en', NL: 'nl', DE: 'de', FR: 'fr', 'FR-CA': 'fr', ES: 'es', 'ES-ES': 'es',
@@ -36,15 +44,32 @@ const UNSUPPORTED = {
   Captcha: '',
 };
 
-export function convert(input) {
-  const qsf = typeof input === 'string' ? JSON.parse(input.replace(/^\uFEFF/, '')) : input;
+const COND = [
+  { key: 'true', label: 'Treat the condition as always true' },
+  { key: 'false', label: 'Treat the condition as always false' },
+];
+const opt = (key, label) => ({ key, label });
+const TYPE_NAMES = {
+  MC: 'Multiple choice', Matrix: 'Matrix', TE: 'Text entry', DB: 'Text / graphic', Slider: 'Slider', CS: 'Constant sum',
+  RO: 'Rank order', SBS: 'Side by side', FileUpload: 'File upload', HotSpot: 'Hot spot', HL: 'Highlight', Timing: 'Timing',
+  Meta: 'Meta info', Captcha: 'Captcha', SS: 'Signature', Draw: 'Drawing', HeatMap: 'Heat map', PGR: 'Pick, group & rank',
+  DD: 'Drill down', TreeSelect: 'Tree select', GAP: 'Gap analysis', Map: 'Map', ScreenCapture: 'Screen capture',
+  Highlight: 'Highlight', Video: 'Video', Conjoint: 'Conjoint',
+};
+
+export function convert(input, settings = {}) {
+  const qsf = typeof input === 'string' ? JSON.parse(input.replace(/^\uFEFF/, '')) : structuredClone(input); // conversion annotates the parsed file
   if (!qsf || !Array.isArray(qsf.SurveyElements)) throw new Error('This is not a Qualtrics .qsf file (SurveyElements missing).');
-  return new Converter(qsf).run();
+  return new Converter(qsf, settings).run();
 }
 
 class Converter {
-  constructor(qsf) {
+  constructor(qsf, settings) {
     this.qsf = qsf;
+    this.choices = settings.choices || {};
+    this.edits = settings.edits || {};
+    this.items = [];
+    this.decided = [];
     this.problems = [];
     this.notes = [];
     this.questions = {}; // QID -> payload
@@ -74,7 +99,7 @@ class Converter {
     const avail = Object.keys(this.options.AvailableLanguages || {}).map(k => [k, lang(k)]);
     this.qLangs = avail.filter(([, l]) => l !== this.lang); // [qualtricsCode, lsCode]
     this.langs = [this.lang, ...new Set(this.qLangs.map(([, l]) => l))];
-    this.title = entry.SurveyName || 'Survey';
+    this.title = String(settings.title || '').trim() || entry.SurveyName || 'Survey';
     this.sid = 100000 + (hash(entry.SurveyID || this.title) % 900000);
   }
 
@@ -82,6 +107,7 @@ class Converter {
     if (!this.flow) this.problem('Survey flow', 'The file has no survey flow.', 'Export the survey again from Qualtrics.');
     this.varGroup = this.newGroup('Variables', [], '');
     this.walk(this.flow ? this.flow.Flow || [] : [], [], '');
+    for (const it of this.items) it.lsCode = (this.models[it.id] || {}).code || '';
     for (const g of this.groups) for (const q of g.questions) this.finishQuestion(q);
     this.scoreGroup();
     for (const g of this.groups) this.finishGroup(g);
@@ -96,11 +122,25 @@ class Converter {
       lss: this.problems.length ? '' : lss,
       problems: this.problems,
       notes: this.notes,
+      items: this.items,
+      decided: this.decided,
       stats: { groups: groups.length, questions: groups.reduce((n, g) => n + g.questions.length, 0), languages: this.langs },
     };
   }
 
-  problem(where, issue, fix) { add(this.problems, { where, issue, fix }); }
+  // Returns the key of the option the user picked for this problem, if any; otherwise records the problem.
+  problem(where, issue, fix, options = []) {
+    const id = 'p' + hash(where + '|' + issue).toString(36);
+    const pick = options.find(o => o.key === this.choices[id]);
+    if (pick) {
+      add(this.notes, { where, issue, fix: `Your choice: ${pick.label}.` });
+      if (!this.decided.some(d => d.id === id)) this.decided.push({ id, where, issue, fix, options, chosen: pick.key });
+      return pick.key;
+    }
+    add(this.problems, { id, where, issue, fix, options });
+  }
+  // A condition that cannot be converted: the user decides whether it counts as true or false.
+  condProblem(where, issue, fix) { return this.problem(where, issue, fix, COND) === 'false' ? '0' : '1'; }
   note(where, issue, fix = '') { add(this.notes, { where, issue, fix }); }
 
   // ---------- survey flow ----------
@@ -139,11 +179,10 @@ class Converter {
           this.endSurvey(f, conds);
           break;
         default:
-          this.problem(`Survey flow element ${f.FlowID || ''}`, `"${f.Type}" elements have no LimeSurvey equivalent.`,
+          if (this.problem(`Survey flow element ${f.FlowID || ''}`, `"${f.Type}" elements have no LimeSurvey equivalent.`,
             f.Type === 'WebService' ? 'Remove the web service from the flow; call the service from a LimeSurvey plugin or after export.'
-              : f.Type === 'Authenticator' ? 'Remove the authenticator and use LimeSurvey participant tokens (closed-access survey).'
-                : f.Type === 'TableOfContents' ? 'Remove it and enable the question index in LimeSurvey presentation settings.'
-                  : 'Remove this element from the survey flow and rebuild it in LimeSurvey.');
+              : 'Remove this element from the survey flow and rebuild it in LimeSurvey.',
+            [opt('skip', 'Leave this element out'), ...(f.Flow ? [opt('keep', 'Leave it out but keep the blocks inside it')] : [])]) === 'keep') this.walk(f.Flow, conds, rgroup);
       }
     }
   }
@@ -199,7 +238,9 @@ class Converter {
     const meta = { ResponseID: 'SAVEDID', SurveyID: 'SID', StartDate: 'date("Y-m-d H:i:s")', RecordedDate: 'date("Y-m-d H:i:s")', CurrentDate: 'date("Y-m-d")', CurrentTime: 'date("H:i:s")', Q_Language: 'LANG', UserLanguage: 'LANG' }[field];
     if (meta && ed.Type !== 'Custom') return this.assign(v, meta, conds);
     if (ed.Type === 'SurveyMetaData' || ed.Type === 'Survey') {
-      return this.problem(`Embedded data "${field}"`, `Built-in survey field "${field}" has no LimeSurvey equivalent.`, 'Remove it from the flow, or set it with a URL parameter of the same name.');
+      if (this.problem(`Embedded data "${field}"`, `Built-in survey field "${field}" has no LimeSurvey equivalent.`, 'Remove it from the flow, or set it with a URL parameter of the same name.',
+        [opt('url', 'Fill it from a URL parameter of the same name'), opt('empty', 'Leave the field empty')]) === 'url') this.vars[field].urlParam = true;
+      return;
     }
     if (ed.Type === 'Recipient' || value === undefined || value === null || value === '') {
       this.vars[field].urlParam = true; // filled from the survey link (?field=...)
@@ -265,7 +306,9 @@ class Converter {
       this.skipLogic(blockQs);
     }
     if (opts.RandomizeQuestions && !['false', 'true', 'All', false, true].includes(opts.RandomizeQuestions)) {
-      this.problem(`Block "${b.Description}"`, `Question randomization "${opts.RandomizeQuestions}" (subset or advanced) cannot be converted.`, 'Set the block to randomize all questions, or remove the randomization.');
+      const c = this.problem(`Block "${b.Description}"`, `Question randomization "${opts.RandomizeQuestions}" (subset or advanced) cannot be converted.`, 'Set the block to randomize all questions, or remove the randomization.',
+        [opt('all', 'Randomize the order of all questions'), opt('none', 'Keep the questions in their order')]);
+      if (c === 'all') for (const g of b.groups) for (const q of g.questions) q.attrs.random_group = `rq${g.gid}`;
     }
   }
 
@@ -296,7 +339,7 @@ class Converter {
         });
       }
     }
-    this.problem(`Block "${b.Description}"`, `Loop & merge type "${o.Looping}" could not be read.`, 'Use a static loop, or a loop over the choices of one question.');
+    this.problem(`Block "${b.Description}"`, `Loop & merge type "${o.Looping}" could not be read.`, 'Use a static loop, or a loop over the choices of one question.', [opt('once', 'Show the block once, without looping')]);
     return [null];
   }
 
@@ -309,12 +352,12 @@ class Converter {
         let later = blockQs.slice(i + 1);
         if (/^QID/.test(dest)) {
           const j = later.findIndex(x => x.q.qsfId === dest);
-          if (j < 0) { this.problem(`Skip logic of ${q.code}`, `Skips to ${dest}, which is not later in the same block.`, 'Point the skip at a later question of the same block, or use display logic.'); continue; }
+          if (j < 0) { this.problem(`Skip logic of ${q.code}`, `Skips to ${dest}, which is not later in the same block.`, 'Point the skip at a later question of the same block, or use display logic.', [opt('ignore', 'Leave the skip out')]); continue; }
           later = later.slice(0, j);
         } else if (dest === 'ENDOFSURVEY') {
           this.ends.push([cond]);
         } else if (dest !== 'ENDOFBLOCK') {
-          this.problem(`Skip logic of ${q.code}`, `Unknown skip destination "${dest}".`, 'Use End of block, End of survey or a later question.');
+          this.problem(`Skip logic of ${q.code}`, `Unknown skip destination "${dest}".`, 'Use End of block, End of survey or a later question.', [opt('ignore', 'Leave the skip out')]);
           continue;
         }
         for (const x of later) x.q.notIf.push(cond);
@@ -348,10 +391,15 @@ class Converter {
   // ---------- questions ----------
 
   addQuestion(qid, g, it) {
-    const p = this.questions[qid];
+    let p = this.questions[qid];
     if (!p) { this.problem(`Question ${qid}`, 'Question is listed in a block but missing from the file.', 'Export the survey again from Qualtrics.'); return null; }
     const where = `${p.DataExportTag || qid} (${qid})`;
-    const base = (p.DataExportTag || qid) + (it ? `L${it.n}` : '');
+    const edit = this.edits[qid] || {};
+    if (!this.items.some(x => x.id === qid)) {
+      this.items.push({ id: qid, code: p.DataExportTag || qid, type: TYPE_NAMES[p.QuestionType] || p.QuestionType, text: strip(p.QuestionText || '').slice(0, 140), block: strip(g.name), mandatory: forced((p.Validation || {}).Settings || {}), skip: !!edit.skip, newCode: edit.code || '', newMandatory: edit.mandatory || '' });
+    }
+    if (edit.skip) { this.note(where, 'Left out, as you chose.'); return null; }
+    const base = (String(edit.code || '').trim() || p.DataExportTag || qid) + (it ? `L${it.n}` : '');
     const ctx = { p, where, iter: it, qsfId: qid };
     if (p.QuestionType === 'Timing') {
       this.savetimings = true;
@@ -362,7 +410,23 @@ class Converter {
     }
     if (p.QuestionType === 'Meta') { this.note(where, 'Meta info question removed.', 'Switch on "Save IP address" and "Save referrer URL" in LimeSurvey if you need them.'); return null; }
     if (p.QuestionType === 'Captcha') { this.captcha = true; this.note(where, 'Captcha question removed; the LimeSurvey survey captcha is switched on instead.'); return null; }
-    if (p.QuestionType in UNSUPPORTED) { this.problem(where, `Question type "${p.QuestionType}" has no LimeSurvey equivalent.`, UNSUPPORTED[p.QuestionType]); return null; }
+    if (p.QuestionType in UNSUPPORTED) {
+      const upload = ['SS', 'Draw', 'ScreenCapture', 'Video'].includes(p.QuestionType);
+      const c = this.problem(where, `Question type "${p.QuestionType}" has no LimeSurvey equivalent.`, UNSUPPORTED[p.QuestionType], [
+        ...(upload ? [opt('upload', 'Replace it with a file upload question')] : []),
+        opt('text', 'Replace it with a long text question'),
+        opt('display', 'Keep only its text, as a text display'),
+        opt('remove', 'Leave the question out'),
+      ]);
+      const as = { upload: { QuestionType: 'FileUpload' }, text: { QuestionType: 'TE', Selector: 'ML' }, display: { QuestionType: 'DB' } }[c];
+      if (!as) return null;
+      p = ctx.p = { ...p, ...as, Validation: as.QuestionType === 'DB' ? undefined : p.Validation };
+    }
+    if (p.QuestionJS && !isDefaultJs(p.QuestionJS)) {
+      const c = this.problem(where, 'The question has custom JavaScript, which uses the Qualtrics JavaScript API and will not run in LimeSurvey.', 'Remove the JavaScript in Qualtrics, then rebuild the behaviour in LimeSurvey with ExpressionScript or the question\'s own script field.',
+        [opt('drop', 'Keep the question without its JavaScript'), opt('remove', 'Leave the question out')]);
+      if (c === 'remove') return null;
+    }
     if (p.QuestionType === 'SBS') return this.sideBySide(p, g, ctx, base);
     const q = this.newQuestion(g, base, 'X', ctx);
     this.models[qid + (it ? '#' + it.key : '')] = q;
@@ -371,9 +435,7 @@ class Converter {
     this.mapType(q, p);
     this.validation(q, p);
     this.randomization(q, p);
-    if (p.QuestionJS && !isDefaultJs(p.QuestionJS)) {
-      this.problem(where, 'The question has custom JavaScript, which uses the Qualtrics JavaScript API and will not run in LimeSurvey.', 'Remove the JavaScript in Qualtrics, then rebuild the behaviour in LimeSurvey with ExpressionScript or the question\'s own script field.');
-    }
+    if (['Y', 'S', 'N'].includes(edit.mandatory) && !['X', '*'].includes(q.type)) q.mandatory = edit.mandatory;
     this.defaults(q, p);
     if (p.ChoiceGroups && Object.keys(p.ChoiceGroups).length) this.note(where, 'Choice group headings are dropped; the choices are kept in order.');
     if (p.Labels && Object.keys(p.Labels).length && q.type === 'K') this.note(where, 'Slider scale labels are dropped.', 'Add them to the question text, or use "left|right" in the subquestion text for end labels.');
@@ -487,7 +549,7 @@ class Converter {
     if (t === 'HL') {
       q.type = 'F'; this.choicesAsSub(q, p); this.answersAsColumns(q, p);
       this.note(q.where, 'Highlight question shown as an array: one row per word, one column per category.');
-      if (!q.answers.length) this.problem(q.where, 'The highlight categories could not be read.', 'Replace it with a matrix question.');
+      if (!q.answers.length && this.problem(q.where, 'The highlight categories could not be read.', 'Replace it with a matrix question.', [opt('text', 'Replace it with a long text question')]) === 'text') { q.type = 'T'; q.sub = []; }
       return;
     }
     if (t === 'Matrix' && sel === 'MaxDiff') {
@@ -504,7 +566,9 @@ class Converter {
       return;
     }
     if (t === 'FileUpload') { q.type = '|'; q.attrs.max_num_of_files = 1; return; }
-    this.problem(q.where, `Question type ${t}/${sel}${sub ? '/' + sub : ''} has no LimeSurvey equivalent.`, 'Change it to a standard type (multiple choice, matrix, text entry, slider, rank order) in Qualtrics.');
+    const c = this.problem(q.where, `Question type ${t}/${sel}${sub ? '/' + sub : ''} has no LimeSurvey equivalent.`, 'Change it to a standard type (multiple choice, matrix, text entry, slider, rank order) in Qualtrics.',
+      [opt('text', 'Replace it with a long text question'), opt('display', 'Keep only its text, as a text display')]);
+    if (c) q.type = c === 'text' ? 'T' : 'X';
   }
 
   // Choices of a single-answer or ranking question become answer options.
@@ -530,8 +594,8 @@ class Converter {
     }
     const logic = q.answers.filter(a => p.Choices[a.id].DisplayLogic);
     if (logic.length && q.type !== 'R') this.choiceFilter(q, p);
-    else if (logic.length) this.problem(q.where, 'Rank order choices with display logic cannot be converted.', 'Remove the choice display logic, or carry the choices forward from a multiple choice question.');
-    if (q.otherId && p.Choices[q.otherId].DisplayLogic) this.problem(q.where, `The "other" choice "${strip(display(p.Choices[q.otherId]))}" has display logic, which LimeSurvey cannot apply.`, 'Remove the display logic from that choice.');
+    else if (logic.length) this.problem(q.where, 'Rank order choices with display logic cannot be converted.', 'Remove the choice display logic, or carry the choices forward from a multiple choice question.', [opt('all', 'Always show all choices')]);
+    if (q.otherId && p.Choices[q.otherId].DisplayLogic) this.problem(q.where, `The "other" choice "${strip(display(p.Choices[q.otherId]))}" has display logic, which LimeSurvey cannot apply.`, 'Remove the display logic from that choice.', [opt('always', 'Always show the "other" choice')]);
     if (q.other === 'Y' && text[0] !== ids[ids.length - 1]) q.attrs.other_position = 'end';
     this.carryForward(q, p, true);
   }
@@ -629,7 +693,7 @@ class Converter {
     if (!dc || !dc.Locator) return;
     const m = /^q:\/\/(QID\d+)\/ChoiceGroup\/(\w+)/.exec(dc.Locator);
     const src = m && this.questions[m[1]];
-    if (!src) return this.problem(q.where, `Carried-forward choices from "${dc.Locator}" could not be read.`, 'Type the choices into the question instead of carrying them forward.');
+    if (!src) return this.problem(q.where, `Carried-forward choices from "${dc.Locator}" could not be read.`, 'Type the choices into the question instead of carrying them forward.', [opt('own', 'Use only the choices typed into this question')]);
     q.carry = { from: m[1], what: m[2], isList };
     // Carried choices keep the source's choice IDs, prefixed with "x" in Qualtrics, and its codes (needed by array_filter).
     const srcCodes = (this.models[m[1]] || {}).choiceCode || {};
@@ -665,8 +729,7 @@ class Converter {
 
   validation(q, p) {
     const s = (p.Validation || {}).Settings || {};
-    if (s.ForceResponse === 'ON') q.mandatory = s.ForceResponseType === 'RequestResponse' ? 'S' : 'Y';
-    if (s.ForceResponse === 'RequestResponse') q.mandatory = 'S';
+    q.mandatory = forced(s);
     if (q.type === 'X' || q.type === '*') q.mandatory = 'N';
     const type = s.Type;
     if (!type || type === 'None') return;
@@ -691,7 +754,7 @@ class Converter {
       if (ct === 'ValidDate') return;
       const re = { ValidEmail: '/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/', ValidUSPhone: '/^\\(?\\d{3}\\)?[-. ]?\\d{3}[-. ]?\\d{4}$/', ValidPhone: '/^[+0-9 ()./-]{6,}$/', ValidUSZip: '/^\\d{5}(-\\d{4})?$/', ValidZip: '/^[A-Za-z0-9 -]{3,10}$/', ValidTextOnly: '/^[^0-9]*$/', ValidUSState: '/^[A-Za-z]{2}$/' }[ct];
       if (re) { q.preg = re; return; }
-      return this.problem(q.where, `Content validation "${ct}" has no LimeSurvey equivalent.`, 'Use email, number, phone, zip, date or text-only validation, or write a regular expression in LimeSurvey.');
+      return this.problem(q.where, `Content validation "${ct}" has no LimeSurvey equivalent.`, 'Use email, number, phone, zip, date or text-only validation, or write a regular expression in LimeSurvey.', [opt('drop', 'Accept any text (no validation)')]);
     }
     if (type === 'MinChar' || type === 'MaxChar' || type === 'CharRange' || type === 'TextLength') {
       if (s.MaxChars) q.attrs.maximum_chars = s.MaxChars;
@@ -703,7 +766,7 @@ class Converter {
       return;
     }
     if (type === 'ChoicesTotal' || type === 'MustTotal') return;
-    this.problem(q.where, `Validation "${type}" has no LimeSurvey equivalent.`, 'Use force response, choice counts, content type or custom validation in Qualtrics.');
+    this.problem(q.where, `Validation "${type}" has no LimeSurvey equivalent.`, 'Use force response, choice counts, content type or custom validation in Qualtrics.', [opt('drop', 'Leave the validation out')]);
   }
 
   randomization(q, p) {
@@ -766,7 +829,7 @@ class Converter {
       if (src && src.type === 'M' && ['SelectedChoices', 'UnselectedChoices'].includes(q.carry.what)) {
         q.attrs[q.carry.what === 'SelectedChoices' ? 'array_filter' : 'array_filter_exclude'] = src.code;
       } else if (!['AllChoices', 'DisplayedChoices'].includes(q.carry.what)) {
-        this.problem(q.where, `Carrying forward "${q.carry.what}" from ${src ? src.code : q.carry.from} into a list cannot be converted.`, 'Carry forward from a multiple choice question, or change this question to multiple choice.');
+        this.problem(q.where, `Carrying forward "${q.carry.what}" from ${src ? src.code : q.carry.from} into a list cannot be converted.`, 'Carry forward from a multiple choice question, or change this question to multiple choice.', [opt('all', 'Show all carried choices')]);
       }
     }
     if (q.customValidation) {
@@ -781,7 +844,7 @@ class Converter {
   carryExpr(q, choiceId) {
     const what = q.carry.what;
     const op = { SelectedChoices: 'Selected', UnselectedChoices: 'NotSelected', DisplayedChoices: 'Displayed', NotDisplayedChoices: 'NotDisplayed', AllChoices: null }[what];
-    if (op === undefined) { this.problem(q.where, `Carry forward of "${what}" cannot be converted.`, 'Carry forward selected, unselected, displayed or all choices.'); return ''; }
+    if (op === undefined) { this.problem(q.where, `Carry forward of "${what}" cannot be converted.`, 'Carry forward selected, unselected, displayed or all choices.', [opt('all', 'Show all carried choices')]); return ''; }
     if (!op) return '';
     return this.logic({ logic: choiceLogic(q.carry.from, choiceId, op), where: `Carry forward into ${q.code}`, iter: q.iter });
   }
@@ -842,15 +905,14 @@ class Converter {
       if (this.scores[id]) return compare(this.scoreExpr(id), op, this.valueExpr(it.RightOperand ?? '', { where, iter: c.iter }), where, this);
     }
     if (it.LogicType !== 'Question') {
-      this.problem(where, `Condition on "${it.LogicType}" (${strip(it.Description || '')}) has no LimeSurvey equivalent.`,
+      return this.condProblem(where, `Condition on "${it.LogicType}" (${strip(it.Description || '')}) has no LimeSurvey equivalent.`,
         { DeviceType: 'Remove the device condition, or ask the respondent about their device in a question.', GeoIP: 'Remove the location condition, or ask for the location in a question.', Panel: 'Use participant (token) attributes and test them with TOKEN:ATTRIBUTE_1.', Quota: 'Remove quota conditions; recreate the quotas in LimeSurvey.', ScoringCategory: 'Use LimeSurvey assessments, or compute the score with an equation question.', Classification: 'Remove the condition.' }[it.LogicType] || 'Replace it with a condition on an answer or embedded data field.');
-      return '1';
     }
     const loc = parseLoc(it.LeftOperand || it.ChoiceLocator || '');
-    if (!loc) { this.problem(where, `Condition "${strip(it.Description || it.LeftOperand || '')}" could not be read.`, 'Rebuild the condition on a question answer.'); return '1'; }
+    if (!loc) return this.condProblem(where, `Condition "${strip(it.Description || it.LeftOperand || '')}" could not be read.`, 'Rebuild the condition on a question answer.');
     const iter = it.QuestionIsInLoop === 'yes' || loc.iter ? (loc.iter ? { key: loc.iter } : c.iter) : null;
     const q = this.ref(loc.qid + (loc.col ? '#col' + loc.col : ''), iter, it.QuestionIsInLoop === 'yes' ? c.iter : null);
-    if (!q) { this.problem(where, `Condition refers to question ${loc.qid}, which is not in the survey (trash or deleted).`, 'Remove the condition or restore the question.'); return '1'; }
+    if (!q) return this.condProblem(where, `Condition refers to question ${loc.qid}, which is not in the survey (trash or deleted).`, 'Remove the condition or restore the question.');
     const right = () => this.valueExpr(it.RightOperand ?? '', { where, iter: c.iter });
     const path = loc.path;
     const id = loc.ids[0];
@@ -876,14 +938,14 @@ class Converter {
       if (col === undefined) {
         // SelectableAnswer/<answer> without a row: the answer is selected in any row.
         const ac = q.answerCode && q.answerCode[row];
-        if (!ac) { this.problem(where, `Condition on matrix answer ${row} of ${q.code} could not be matched.`, 'Rebuild the condition in LimeSurvey.'); return '1'; }
+        if (!ac) return this.condProblem(where, `Condition on matrix answer ${row} of ${q.code} could not be matched.`, 'Rebuild the condition in LimeSurvey.');
         const any = q.sub.map(s => (q.type === ':' ? `${q.code}_${s.code}_${ac}.NAOK == 1` : `${q.code}_${s.code}.NAOK == "${ac}"`)).join(' or ');
         return op === 'NotSelected' ? `!(${any})` : `(${any})`;
       }
       if (!(q.choiceCode || {})[row] && (q.choiceCode || {})[col]) [row, col] = [col, row];
       const rc = q.choiceCode && q.choiceCode[row];
       const ac = q.answerCode && q.answerCode[col];
-      if (!rc || !ac) { this.problem(where, `Condition on matrix answer ${row}/${col} of ${q.code} could not be matched.`, 'Rebuild the condition in LimeSurvey.'); return '1'; }
+      if (!rc || !ac) return this.condProblem(where, `Condition on matrix answer ${row}/${col} of ${q.code} could not be matched.`, 'Rebuild the condition in LimeSurvey.');
       const sel = q.type === ':' ? `${q.code}_${rc}_${ac}.NAOK == 1` : `${q.code}_${rc}.NAOK == "${ac}"`;
       if (op === 'NotSelected') return `!(${sel})`;
       return sel;
@@ -892,8 +954,7 @@ class Converter {
       const v = this.pathExpr(q, loc, where);
       return compare(v, op, right(), where, this);
     }
-    this.problem(where, `Condition on "${path}" of ${q.code} cannot be converted.`, 'Rebuild the condition on a selected choice or an entered value.');
-    return '1';
+    return this.condProblem(where, `Condition on "${path}" of ${q.code} cannot be converted.`, 'Rebuild the condition on a selected choice or an entered value.');
   }
 
   // "Is displayed": the question's own and its group's relevance, written out (relevanceStatus is not
@@ -912,7 +973,7 @@ class Converter {
 
   selected(q, id, where) {
     const code = q.choiceCode && q.choiceCode[id];
-    if (!code) { this.problem(where, `Condition refers to choice ${id} of ${q.code}, which does not exist.`, 'Fix the condition in Qualtrics.'); return '1'; }
+    if (!code) return this.condProblem(where, `Condition refers to choice ${id} of ${q.code}, which does not exist.`, 'Fix the condition in Qualtrics.');
     if (['L', '!'].includes(q.type)) return `${q.code}.NAOK == "${code}"`;
     if (q.type === 'M') return code === 'other' ? `!is_empty(${q.code}_other.NAOK)` : `${q.code}_${code}.NAOK == "Y"`;
     if (q.type === 'R') return `!is_empty(listifop('value', '==', '${code}', 'code', ',', ${q.answers.map((_, i) => `${q.code}_${i + 1}.sgqa`).join(', ')}))`;
@@ -974,7 +1035,7 @@ class Converter {
         break;
       }
     }
-    this.problem(where, `Piped value "${loc.path}${loc.ids.length ? '/' + loc.ids.join('/') : ''}" of ${q.code} cannot be converted.`, 'Pipe the selected choices, the entered text or the question text instead.');
+    this.problem(where, `Piped value "${loc.path}${loc.ids.length ? '/' + loc.ids.join('/') : ''}" of ${q.code} cannot be converted.`, 'Pipe the selected choices, the entered text or the question text instead.', [opt('blank', 'Leave the piped value blank')]);
     return '""';
   }
 
@@ -1037,7 +1098,7 @@ class Converter {
       return r.literal !== undefined ? JSON.stringify(r.literal) : `floatval(${r.expr})`;
     });
     if (/[^\s\d+\-*/().,"a-zA-Z_]/.test(expr.replace(/"[^"]*"/g, ''))) {
-      this.problem(ctx.where, `Math expression "$e{${body}}" could not be converted.`, 'Use + - * / and parentheses only, or compute the value in LimeSurvey with an equation question.');
+      this.problem(ctx.where, `Math expression "$e{${body}}" could not be converted.`, 'Use + - * / and parentheses only, or compute the value in LimeSurvey with an equation question.', [opt('blank', 'Leave the piped value blank')]);
       return { expr: '""' };
     }
     return { expr: expr.trim().replace(/\b(abs|round|floor|ceil|sqrt|pow|min|max|sum|log|exp)\b/gi, f => f.toLowerCase()) };
@@ -1048,7 +1109,7 @@ class Converter {
     let m;
     if ((m = /^e:\/\/Field\/(.+)$/.exec(s))) return { expr: this.fieldRef(decodeURIComponent(m[1]), ctx.where) + '.NAOK' };
     if ((m = /^lm:\/\/Field\/(\d+)$/.exec(s))) {
-      if (!ctx.iter) { this.problem(ctx.where, `Loop & merge field ${s} is used outside a loop.`, 'Only use loop & merge fields inside the looping block.'); return { literal: '' }; }
+      if (!ctx.iter) { this.problem(ctx.where, `Loop & merge field ${s} is used outside a loop.`, 'Only use loop & merge fields inside the looping block.', [opt('blank', 'Leave the piped value blank')]); return { literal: '' }; }
       return { literal: (ctx.iter.fields || {})[m[1]] ?? '' };
     }
     if (/^lm:\/\/(CurrentLoopNumber|CurrentIteration)/.test(s)) return { literal: ctx.iter ? String(ctx.iter.n) : '' };
@@ -1062,14 +1123,14 @@ class Converter {
       const loc = parseLoc(s);
       if (loc) {
         const q = this.ref(loc.qid + (loc.col ? '#col' + loc.col : ''), loc.iter ? { key: loc.iter } : ctx.iter);
-        if (!q) { this.problem(ctx.where, `Piped text "\${${s}}" refers to a question that is not in the survey.`, 'Remove the piped text or restore the question.'); return { literal: '' }; }
+        if (!q) { this.problem(ctx.where, `Piped text "\${${s}}" refers to a question that is not in the survey.`, 'Remove the piped text or restore the question.', [opt('blank', 'Leave the piped value blank')]); return { literal: '' }; }
         return { expr: this.pathExpr(q, loc, ctx.where) };
       }
     }
     if ((m = /^gr:\/\/(SC_\w+)\/(Score|WeightedMean|WeightedStdDev)$/.exec(s)) && this.scores[m[1]]) {
       if (m[2] === 'Score') return { expr: this.scoreExpr(m[1]) };
     }
-    this.problem(ctx.where, `Piped text "\${${s}}" cannot be converted.`, s.startsWith('gr://') ? 'Use LimeSurvey assessments, or compute the score with an equation question.' : 'Remove the piped text, or replace it with an answer or embedded data field.');
+    this.problem(ctx.where, `Piped text "\${${s}}" cannot be converted.`, s.startsWith('gr://') ? 'Use LimeSurvey assessments, or compute the score with an equation question.' : 'Remove the piped text, or replace it with an answer or embedded data field.', [opt('blank', 'Leave the piped value blank')]);
     return { literal: '' };
   }
 
@@ -1134,7 +1195,7 @@ class Converter {
     const name = qo.Name || qo.QuotaName || `Quota ${id}`;
     const where = `Quota "${name}"`;
     const limit = Number(qo.Occurrences ?? qo.Quota ?? qo.Limit);
-    const fail = why => { this.problem(where, why, 'Simplify the quota to "question = choice" conditions joined by AND (OR only between choices of the same question), or recreate it in LimeSurvey under Survey settings > Quotas.'); return null; };
+    const fail = why => { this.problem(where, why, 'Simplify the quota to "question = choice" conditions joined by AND (OR only between choices of the same question), or recreate it in LimeSurvey under Survey settings > Quotas.', [opt('drop', 'Leave the quota out')]); return null; };
     if (!Number.isFinite(limit)) return fail('The quota limit could not be read.');
     const logic = qo.Logic || qo.Condition;
     const items = [];
@@ -1265,6 +1326,7 @@ function recode(p, id) { const r = p.RecodeValues; return r && !Array.isArray(r)
 function strip(html) { return String(html || '').replace(/<\/?(span|div|p|br)\b[^>]*>/gi, ' ').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim(); }
 function escBraces(s) { return s.replace(/\{/g, '&#123;').replace(/\}/g, '&#125;'); }
 function lang(code) { const c = String(code).toUpperCase(); return LANGS[c] || c.toLowerCase(); }
+function forced(s) { return s.ForceResponse === 'ON' ? (s.ForceResponseType === 'RequestResponse' ? 'S' : 'Y') : s.ForceResponse === 'RequestResponse' ? 'S' : 'N'; }
 function hash(s) { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; }
 function and(parts) { const p = parts.filter(x => x && x !== '1'); return p.length ? p.map(x => (p.length > 1 && / or /.test(x) ? `(${x})` : x)).join(' and ') : ''; }
 function joinConj(items) {
@@ -1319,8 +1381,7 @@ function compare(left, op, right, where, conv) {
     case 'Selected': return `!is_empty(${left})`;
     case 'NotSelected': return `is_empty(${left})`;
   }
-  conv.problem(where, `Operator "${op}" cannot be converted.`, 'Use equal, not equal, greater/less than, empty, contains or matches regex.');
-  return '1';
+  return conv.condProblem(where, `Operator "${op}" cannot be converted.`, 'Use equal, not equal, greater/less than, empty, contains or matches regex.');
 }
 
 function choiceLogic(qid, id, op) {
