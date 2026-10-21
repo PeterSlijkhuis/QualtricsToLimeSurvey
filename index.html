@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qualtrics to LimeSurvey</title>
+<style>
+  :root { --bg: #f7f7f5; --card: #fff; --text: #1d1d1b; --muted: #5f5f5a; --line: #deded8; --accent: #1f6f50; --bad: #a8261b; --bad-bg: #fbeceb; --warn-bg: #f6f1e1; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161615; --card: #20201e; --text: #ececea; --muted: #a5a59f; --line: #393935; --accent: #5cc29a; --bad: #ff8a80; --bad-bg: #3a1d1b; --warn-bg: #312b1a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  p.lead { color: var(--muted); margin: 0 0 24px; }
+  label.drop { display: block; border: 2px dashed var(--line); border-radius: 12px; background: var(--card); padding: 40px 16px; text-align: center; cursor: pointer; }
+  label.drop.over, label.drop:focus-within { border-color: var(--accent); }
+  label.drop strong { color: var(--accent); }
+  input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  #out { margin-top: 24px; }
+  .status { padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; }
+  .status.bad { background: var(--bad-bg); color: var(--bad); }
+  .status.ok { background: var(--card); border: 1px solid var(--line); }
+  a.button { display: inline-block; background: var(--accent); color: #fff; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 8px; }
+  @media (prefers-color-scheme: dark) { a.button { color: #10241b; } }
+  h2 { font-size: 1.1rem; margin: 24px 0 8px; }
+  ul.items { list-style: none; padding: 0; margin: 0; }
+  ul.items li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; }
+  ul.items.notes li { background: var(--warn-bg); }
+  .where { font-weight: 600; }
+  .fix { color: var(--muted); margin-top: 4px; }
+  .fix::before { content: "Change: "; font-weight: 600; }
+  footer { color: var(--muted); font-size: .9rem; margin-top: 40px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Qualtrics to LimeSurvey</h1>
+  <p class="lead">Converts a Qualtrics survey export (.qsf) into a LimeSurvey survey file (.lss), including display and skip logic, survey flow branches, randomizers, embedded data, piped text and loops. Your file never leaves your computer.</p>
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept=".qsf,application/json">
+    <strong>Choose a .qsf file</strong> or drop it here
+  </label>
+  <div id="out" aria-live="polite"></div>
+  <footer>In Qualtrics: Survey &gt; Tools &gt; Import/Export &gt; Export survey. In LimeSurvey: Create survey &gt; Import, then choose the .lss file.</footer>
+</main>
+<script type="module">
+  import { convert } from './src/qsf2lss.js';
+  const out = document.getElementById('out');
+  const drop = document.getElementById('drop');
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const list = (items, cls) => `<ul class="items ${cls}">${items.map(i => `<li><div class="where">${esc(i.where)}</div><div>${esc(i.issue)}</div>${i.fix ? `<div class="fix">${esc(i.fix)}</div>` : ''}</li>`).join('')}</ul>`;
+
+  async function handle(file) {
+    if (!file) return;
+    let r;
+    try {
+      r = convert(await file.text());
+    } catch (e) {
+      out.innerHTML = `<div class="status bad">Could not read ${esc(file.name)}: ${esc(e.message)}</div>`;
+      return;
+    }
+    let html = '';
+    if (r.problems.length) {
+      html += `<div class="status bad"><strong>Not converted.</strong> ${r.problems.length} part(s) of this survey cannot be converted faithfully. Change them in Qualtrics, export again and retry.</div>`;
+      html += `<h2>Problems</h2>` + list(r.problems, 'problems');
+    } else {
+      const url = URL.createObjectURL(new Blob([r.lss], { type: 'application/xml' }));
+      const name = file.name.replace(/\.qsf$/i, '') + '.lss';
+      html += `<div class="status ok"><strong>Converted:</strong> ${r.stats.questions} questions in ${r.stats.groups} groups, languages ${esc(r.stats.languages.join(', '))}.<br><a class="button" href="${url}" download="${esc(name)}">Download ${esc(name)}</a></div>`;
+    }
+    if (r.notes.length) html += `<h2>Good to know</h2>` + list(r.notes, 'notes');
+    out.innerHTML = html;
+  }
+
+  document.getElementById('file').addEventListener('change', e => handle(e.target.files[0]));
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); handle(e.dataTransfer.files[0]); });
+</script>
+</body>
+</html>
