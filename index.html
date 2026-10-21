@@ -102,18 +102,27 @@
   .decision { padding: 20px 22px; }
   .decision .where { font-size: 13px; color: var(--faint); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
   .decision .issue { font-weight: 600; margin-bottom: 4px; }
-  .decision .fix { color: var(--muted); font-size: 15px; margin-bottom: 14px; }
+  .explain { display: grid; gap: 10px; margin: 14px 0 16px; }
+  .explain div { background: var(--surface-2); border-radius: var(--radius-s); padding: 12px 14px; font-size: 15px; }
+  .explain b { display: block; font-size: 13px; color: var(--muted); margin-bottom: 2px; }
+  .ask { font-weight: 600; font-size: 15px; margin: 0 0 8px; }
+  details.alt { margin-top: 14px; font-size: 14px; color: var(--muted); }
+  details.alt summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+  details.alt p { margin: 6px 0 0; }
   .decision.done .issue::after { content: "Decided"; margin-left: 10px; font-size: 12px; font-weight: 600; color: var(--ok); background: var(--ok-soft); border-radius: 999px; padding: 2px 8px; vertical-align: 2px; }
-  .options { display: flex; flex-wrap: wrap; gap: 8px; }
+  .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
   .options label {
-    display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line-strong); border-radius: 999px;
-    padding: 8px 14px; font-size: 15px; cursor: pointer; transition: background .15s, border-color .15s;
+    position: relative; display: block; border: 2px solid var(--line-strong); border-radius: var(--radius-s);
+    padding: 14px 16px 14px 48px; cursor: pointer; transition: background .15s, border-color .15s; min-height: 56px;
   }
   .options label:hover { border-color: var(--accent); }
   .options input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  .options input:checked + span { font-weight: 600; }
-  .options label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .options label::before { content: ""; position: absolute; left: 16px; top: 16px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--surface); }
+  .options label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .options label:has(input:checked)::before { border: 6px solid var(--accent); }
   .options label:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .options .lab { display: block; font-weight: 600; }
+  .options .imp { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
   .manual { font-size: 15px; color: var(--bad); font-weight: 600; }
   .empty { text-align: center; padding: 48px 24px; color: var(--muted); }
   .empty svg { width: 44px; height: 44px; color: var(--ok); margin-bottom: 8px; }
@@ -141,10 +150,25 @@
   .lbl { display: none; }
 
   /* Notes */
-  .note { padding: 16px 22px; border-top: 1px solid var(--line); }
+  .note { padding: 18px 22px; border-top: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; }
   .note:first-child { border-top: 0; }
-  .note .where { font-size: 13px; color: var(--faint); font-weight: 600; }
-  .note .fix { color: var(--muted); font-size: 15px; }
+  .note .where { font-size: 13px; color: var(--faint); font-weight: 600; grid-column: 1; }
+  .note .what { grid-column: 1; }
+  .note .todo { grid-column: 1; margin-top: 8px; background: var(--warn-soft); border-radius: var(--radius-s); padding: 10px 14px; font-size: 15px; }
+  .note .todo b { display: block; font-size: 13px; color: var(--warn); }
+  .note .tick { grid-column: 2; grid-row: 1 / span 3; align-self: start; display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 500; cursor: pointer; border: 1px solid var(--line-strong); border-radius: 999px; padding: 6px 14px 6px 10px; white-space: nowrap; }
+  .note .tick input { width: 20px; height: 20px; accent-color: var(--ok); margin: 0; }
+  .note.ticked .where, .note.ticked .what, .note.ticked .todo { opacity: .45; }
+  .note.ticked .tick { color: var(--ok); border-color: var(--ok); }
+  h2.sub { font-size: 19px; margin: 28px 4px 4px; letter-spacing: -.01em; }
+  p.subnote { color: var(--muted); margin: 0 4px 12px; font-size: 15px; }
+  .local { display: flex; gap: 16px; align-items: flex-start; background: var(--ok-soft); border-radius: var(--radius); padding: 20px 22px; margin: 20px 0 0; }
+  .local svg { width: 40px; height: 40px; flex: none; color: var(--ok); }
+  .local b { display: block; font-size: 19px; margin-bottom: 4px; }
+  .local p { margin: 0; color: var(--text); font-size: 16px; }
+  .local p + p { margin-top: 6px; color: var(--muted); font-size: 15px; }
+  .onpc { display: inline-flex; align-items: center; gap: 5px; color: var(--ok); font-weight: 600; font-size: 13px; }
+  .onpc svg { width: 13px; height: 13px; }
 
   /* Settings */
   .field { padding: 20px 22px; }
@@ -166,6 +190,8 @@
   footer a { color: inherit; }
 
   @media (max-width: 720px) {
+    .note { grid-template-columns: 1fr; }
+    .note .tick { grid-column: 1; grid-row: auto; justify-self: start; margin-top: 8px; }
     header.hero { padding: 48px 0 28px; }
     .steps { grid-template-columns: 1fr; }
     .row { grid-template-columns: auto minmax(0, 1fr); }
@@ -187,58 +213,61 @@
   <header class="hero wrap">
     <p class="eyebrow">Qualtrics to LimeSurvey</p>
     <h1>Move your survey.<br>Keep its logic.</h1>
-    <p class="lead">Turn a Qualtrics export into a LimeSurvey survey, with display logic, branches, loops, piping, scoring and quotas intact.</p>
+    <p class="lead">Turn your Qualtrics survey into a LimeSurvey survey. Your questions, and the rules about who sees what, come along.</p>
   </header>
   <main class="wrap">
     <label class="drop" id="drop">
       <input type="file" id="file" accept=".qsf,application/json">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-      <span class="title">Choose a .qsf file</span>
-      <span class="sub">or drop it here</span>
+      <span class="title">Choose your Qualtrics file</span>
+      <span class="sub">Click here, or drag the file (it ends in .qsf) onto this box</span>
     </label>
     <div id="error" class="error hidden" role="alert"></div>
+    <div class="local" role="note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/><rect x="9.5" y="8.5" width="5" height="4" rx="1"/><path d="M10.5 8.5V7.5a1.5 1.5 0 0 1 3 0v1"/></svg>
+      <div>
+        <b>Everything stays on your own computer</b>
+        <p>This page opens in your web browser, but the conversion happens on your computer, not on a server. Your survey file is not uploaded, sent or saved anywhere, and nobody else can see it.</p>
+        <p>You can check this yourself: once this page has loaded, switch off your internet connection. It keeps working.</p>
+      </div>
+    </div>
     <ol class="steps">
-      <li><b>1. Export</b><span>In Qualtrics: Survey, Tools, Import/Export, Export survey.</span></li>
-      <li><b>2. Review</b><span>Decide how to handle anything LimeSurvey cannot do, and adjust questions.</span></li>
-      <li><b>3. Import</b><span>In LimeSurvey: Create survey, Import, then choose the .lss file.</span></li>
+      <li><b>1. Get your file from Qualtrics</b><span>Open your survey in Qualtrics, click Tools, then Import/Export, then Export survey. A file ending in .qsf is saved on your computer.</span></li>
+      <li><b>2. Open it here</b><span>Click the box above and pick that file. If something needs your choice, this page asks you in plain words.</span></li>
+      <li><b>3. Put it into LimeSurvey</b><span>Click Download, then in LimeSurvey choose Create survey, Import, and pick the downloaded file (it ends in .lss).</span></li>
     </ol>
-    <p class="privacy">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-      Your file never leaves your computer. Everything runs in this page.
-    </p>
   </main>
 </div>
 
 <div id="review" class="hidden">
   <div class="bar">
     <div class="wrap">
-      <div class="file"><b id="fname"></b><span id="fstats"></span></div>
+      <div class="file"><b id="fname"></b><span><span class="onpc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Only on this computer</span> · <span id="fstats"></span></span></div>
       <span id="status" class="pill" aria-live="polite"></span>
-      <button class="btn ghost" id="restart" type="button">New file</button>
-      <button class="btn" id="export" type="button">Export .lss</button>
+      <button class="btn ghost" id="restart" type="button">Other file</button>
+      <button class="btn" id="export" type="button">Download for LimeSurvey</button>
     </div>
   </div>
   <main class="wrap">
     <div class="seg" role="tablist" aria-label="Review">
-      <button role="tab" id="tab-decisions" aria-controls="p-decisions">Decisions<span class="count" id="c-decisions"></span></button>
+      <button role="tab" id="tab-decisions" aria-controls="p-decisions">Choices<span class="count" id="c-decisions"></span></button>
       <button role="tab" id="tab-questions" aria-controls="p-questions">Questions<span class="count" id="c-questions"></span></button>
-      <button role="tab" id="tab-notes" aria-controls="p-notes">Notes<span class="count" id="c-notes"></span></button>
+      <button role="tab" id="tab-notes" aria-controls="p-notes">After import<span class="count" id="c-notes"></span></button>
       <button role="tab" id="tab-survey" aria-controls="p-survey">Survey</button>
     </div>
 
     <section class="panel" role="tabpanel" id="p-decisions" aria-labelledby="tab-decisions">
-      <div class="intro"><span>These parts have no exact LimeSurvey equivalent. Pick how each one should be converted.</span><button class="btn small ghost" id="suggest" type="button">Use the first option everywhere</button></div>
+      <div class="intro"><span>LimeSurvey cannot do everything Qualtrics does. For each item below, read what it does now in Qualtrics, then pick what should happen in LimeSurvey. Not sure? The first option is usually the safest.</span><button class="btn small ghost" id="suggest" type="button">Pick the first option for all</button></div>
       <div id="decisions"></div>
     </section>
 
     <section class="panel" role="tabpanel" id="p-questions" aria-labelledby="tab-questions">
-      <div class="intro"><span>Switch questions off to leave them out, rename their LimeSurvey codes or change whether an answer is required.</span><input class="search" id="search" type="search" placeholder="Search questions" aria-label="Search questions"></div>
+      <div class="intro"><span>All questions in your survey. Switch one off to leave it out. You can also change its short name (used in your results) and whether people must answer it.</span><input class="search" id="search" type="search" placeholder="Search questions" aria-label="Search questions"></div>
       <div id="questions"></div>
     </section>
 
     <section class="panel" role="tabpanel" id="p-notes" aria-labelledby="tab-notes">
-      <div class="intro"><span>Converted, with a visible difference. Nothing to decide here.</span></div>
-      <div class="card" id="notes"></div>
+      <div id="notes"></div>
     </section>
 
     <section class="panel" role="tabpanel" id="p-survey" aria-labelledby="tab-survey">
@@ -252,7 +281,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs in your browser. <a href="https://github.com/PeterSlijkhuis/QualtricsToLimeSurvey">Source and documentation</a></footer>
+  <footer>Your file is converted on this computer and never uploaded. <a href="https://github.com/PeterSlijkhuis/QualtricsToLimeSurvey">How it works</a></footer>
 </div>
 
 <div class="toast" id="toast" role="status"></div>
@@ -262,14 +291,14 @@
 
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const state = { name: '', text: '', choices: {}, edits: {}, title: '', tab: 'decisions', result: null, order: [] };
+  const state = { name: '', text: '', choices: {}, edits: {}, title: '', tab: 'decisions', result: null, order: [], ticked: new Set() };
 
   function load(file) {
     if (!file) return;
     file.text().then(text => {
       let first;
       try { first = convert(text); } catch (e) { return showError(`${file.name} could not be read: ${e.message}`); }
-      Object.assign(state, { name: file.name, text, choices: {}, edits: {}, title: '', order: [] });
+      Object.assign(state, { name: file.name, text, choices: {}, edits: {}, title: '', order: [], ticked: new Set() });
       $('title').value = '';
       $('error').classList.add('hidden');
       $('start').classList.add('hidden');
@@ -296,17 +325,18 @@
     $('fstats').textContent = `${kept} of ${r.items.length} questions, ${r.stats.languages.join(', ')}`;
     const st = $('status');
     if (manual.length) { st.className = 'pill bad'; st.textContent = `${manual.length} to fix in Qualtrics`; }
-    else if (open.length) { st.className = 'pill todo'; st.textContent = `${open.length} decision${open.length > 1 ? 's' : ''} left`; }
-    else { st.className = 'pill ok'; st.textContent = 'Ready to export'; }
+    else if (open.length) { st.className = 'pill todo'; st.textContent = `${open.length} choice${open.length > 1 ? 's' : ''} to make`; }
+    else { st.className = 'pill ok'; st.textContent = 'Ready to download'; }
     $('export').disabled = !r.lss;
 
     $('c-decisions').textContent = r.problems.length || '';
     $('c-questions').textContent = r.items.length;
-    $('c-notes').textContent = r.notes.filter(n => !n.fix.startsWith('Your choice:')).length;
+    const notes = r.notes.filter(n => !n.fix.startsWith('Your choice:'));
+    $('c-notes').textContent = notes.filter(n => n.fix && !state.ticked.has(noteKey(n))).length || '';
     $('suggest').classList.toggle('hidden', !open.length);
     renderDecisions(r);
     renderQuestions(r);
-    renderNotes(r.notes.filter(n => !n.fix.startsWith('Your choice:')));
+    renderNotes(notes);
     $('title').placeholder = titleDefault();
     $('stats').innerHTML = `<div><b>${kept}</b><span>questions included</span></div><div><b>${r.stats.groups}</b><span>LimeSurvey groups</span></div><div><b>${r.stats.languages.length}</b><span>language${r.stats.languages.length > 1 ? 's' : ''}</span></div>`;
     for (const t of ['decisions', 'questions', 'notes', 'survey']) {
@@ -333,10 +363,14 @@
       <div class="card decision${p.chosen ? ' done' : ''}" data-id="${esc(p.id)}">
         <div class="where">${esc(p.where)}</div>
         <div class="issue">${esc(p.issue)}</div>
-        <div class="fix">In Qualtrics: ${esc(p.fix)}</div>
+        <div class="explain">
+          ${p.qualtrics ? `<div><b>What Qualtrics does</b>${esc(p.qualtrics)}</div>` : ''}
+          ${p.why ? `<div><b>Why you need to choose</b>${esc(p.why)}</div>` : ''}
+        </div>
         ${p.options.length
-          ? `<div class="options" role="radiogroup" aria-label="${esc(p.where)}">${p.options.map(o => `<label><input type="radio" name="${esc(p.id)}" value="${esc(o.key)}"${state.choices[p.id] === o.key ? ' checked' : ''}><span>${esc(o.label)}</span></label>`).join('')}</div>`
-          : `<div class="manual">Change this in Qualtrics, export again and upload the new file.</div>`}
+          ? `<p class="ask" id="ask-${esc(p.id)}">What should happen in LimeSurvey?</p><div class="options" role="radiogroup" aria-labelledby="ask-${esc(p.id)}">${p.options.map(o => `<label><input type="radio" name="${esc(p.id)}" value="${esc(o.key)}"${state.choices[p.id] === o.key ? ' checked' : ''}><span class="lab">${esc(o.label)}</span>${o.impact ? `<span class="imp">${esc(o.impact)}</span>` : ''}</label>`).join('')}</div>
+             <details class="alt"><summary>Rather fix it in Qualtrics?</summary><p>${esc(p.fix)} Then export the survey again and open the new file here.</p></details>`
+          : `<div class="manual">This cannot be solved here. ${esc(p.fix)} Then export the survey again and open the new file here.</div>`}
       </div>`).join('');
   }
 
@@ -349,23 +383,36 @@
       if (!blocks.length || blocks[blocks.length - 1].name !== i.block) blocks.push({ name: i.block, items: [] });
       blocks[blocks.length - 1].items.push(i);
     }
-    const req = { N: 'Optional', S: 'Requested', Y: 'Required' };
+    const req = { N: 'Can be skipped', S: 'Reminder if skipped', Y: 'Must answer' };
     $('questions').innerHTML = blocks.map(b => `<div class="block-name">${esc(b.name)}</div><div class="card">${b.items.map(i => {
       const e = state.edits[i.id] || {};
       const m = e.mandatory || i.mandatory;
       return `<div class="row${e.skip ? ' off' : ''}" data-id="${esc(i.id)}">
         <label class="switch" title="Include this question"><input type="checkbox" data-k="include" aria-label="Include ${esc(i.code)}"${e.skip ? '' : ' checked'}><span></span></label>
         <div class="qtext"><b>${esc(i.code)}</b> <small style="color:var(--faint)">${esc(i.type)}</small><span>${esc(i.text) || '&nbsp;'}</span></div>
-        <div class="code"><span class="lbl">Code</span><input type="text" data-k="code" value="${esc(e.code || '')}" placeholder="${esc(i.lsCode || i.code)}" aria-label="LimeSurvey code for ${esc(i.code)}"${e.skip ? ' disabled' : ''}></div>
+        <div class="code"><span class="lbl">Short name</span><input type="text" data-k="code" value="${esc(e.code || '')}" placeholder="${esc(i.lsCode || i.code)}" aria-label="Short name for ${esc(i.code)}"${e.skip ? ' disabled' : ''}></div>
         <div class="req"><span class="lbl">Answer</span><select data-k="mandatory" aria-label="Answer required for ${esc(i.code)}"${e.skip ? ' disabled' : ''}>${Object.entries(req).map(([k, v]) => `<option value="${k}"${m === k ? ' selected' : ''}>${v}</option>`).join('')}</select></div>
       </div>`;
     }).join('')}</div>`).join('');
   }
 
+  const noteKey = n => n.where + '|' + n.issue;
   function renderNotes(notes) {
-    $('notes').innerHTML = notes.length
-      ? notes.map(n => `<div class="note"><div class="where">${esc(n.where)}</div><div>${esc(n.issue)}</div>${n.fix ? `<div class="fix">${esc(n.fix)}</div>` : ''}</div>`).join('')
-      : `<div class="empty">Nothing to mention.</div>`;
+    const todo = notes.filter(n => n.fix), info = notes.filter(n => !n.fix);
+    const card = (n, tick) => {
+      const k = noteKey(n), done = state.ticked.has(k);
+      return `<div class="note${done ? ' ticked' : ''}"><div class="where">${esc(n.where)}</div><div class="what">${esc(n.issue)}</div>
+        ${tick ? `<div class="todo"><b>${/^If /.test(n.fix) ? 'Only needed if this matters for your survey' : 'What to do in LimeSurvey'}</b>${esc(n.fix)}</div><label class="tick"><input type="checkbox" data-note="${esc(k)}"${done ? ' checked' : ''}>${done ? 'Done' : 'Mark as done'}</label>` : ''}</div>`;
+    };
+    const left = todo.filter(n => !state.ticked.has(noteKey(n))).length;
+    $('notes').innerHTML = !notes.length
+      ? `<div class="card empty"><b>Nothing to do after importing</b>Everything came across as it is in Qualtrics.</div>`
+      : (todo.length ? `<h2 class="sub">To do in LimeSurvey after importing${left ? ` (${left} left)` : ', all done'}</h2>
+          <p class="subnote">These parts did not come across completely. Your survey still works, but you set them up yourself in LimeSurvey, after importing the file. Tick each one off when it is done; this list is only kept while this page is open.</p>
+          <div class="card">${todo.map(n => card(n, true)).join('')}</div>` : '')
+        + (info.length ? `<h2 class="sub">Changed for you, nothing to do</h2>
+          <p class="subnote">These parts look or work a little differently in LimeSurvey. They are already handled; this is just so you know what respondents will see.</p>
+          <div class="card">${info.map(n => card(n, false)).join('')}</div>` : '');
   }
 
   // Keeps focus and scroll position while the panel is re-rendered after an edit.
@@ -400,7 +447,7 @@
       for (const p of open) state.choices[p.id] = p.options[0].key;
       run();
     }
-    toast('First option chosen for every decision. You can still change each one.');
+    toast('The first option is picked everywhere. You can still change each one.');
   });
 
   let typing;
@@ -416,6 +463,16 @@
     else rerun();
   });
   $('search').addEventListener('input', () => renderQuestions(state.result));
+  $('notes').addEventListener('change', e => {
+    const k = e.target.dataset.note;
+    if (k === undefined) return;
+    if (e.target.checked) state.ticked.add(k); else state.ticked.delete(k);
+    const y = window.scrollY;
+    render();
+    window.scrollTo(0, y);
+    const again = document.querySelector(`[data-note="${CSS.escape(k)}"]`);
+    if (again) again.focus();
+  });
   $('title').addEventListener('input', e => { state.title = e.target.value; clearTimeout(typing); typing = setTimeout(rerun, 350); });
 
   for (const t of ['decisions', 'questions', 'notes', 'survey']) $(`tab-${t}`).addEventListener('click', () => { state.tab = t; render(); });
@@ -436,7 +493,7 @@
     a.download = state.name.replace(/\.qsf$/i, '') + '.lss';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    toast(`Saved ${a.download}. In LimeSurvey: Create survey, Import.`);
+    toast(`Saved ${a.download} in your downloads. In LimeSurvey: Create survey, Import, then pick this file.`);
   });
   $('restart').addEventListener('click', () => {
     $('review').classList.add('hidden');

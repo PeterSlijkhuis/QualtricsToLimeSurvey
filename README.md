@@ -14,24 +14,35 @@
   <img src="docs/images/start.png" alt="Start page: choose or drop a .qsf file" width="820">
 </p>
 
-It runs entirely in the browser, so survey files never leave your computer.
+### Your file stays on your computer
+
+The converter opens in your web browser, but all the work happens on your own computer. The survey file is not
+uploaded, sent or stored anywhere. You can check it: once the page has loaded, switch off your internet connection
+and it keeps working.
 
 ## Use it
 
-1. In Qualtrics: **Survey > Tools > Import/Export > Export survey** to get the `.qsf`.
-2. Open the [converter](https://peterslijkhuis.github.io/QualtricsToLimeSurvey/) and choose or drop the file.
-3. **Decisions**: every part that LimeSurvey cannot do exactly is listed with options, such as "treat the condition
-   as always true", "keep the question without its JavaScript" or "replace it with a file upload question".
-   Pick one for each, or use the first option everywhere. Each card also says what to change in Qualtrics
-   instead. A decision can change later; picking an option can reveal a new one (for example leaving out a
-   question that other logic depends on).
-4. **Questions**: switch questions off, rename their LimeSurvey codes or change whether an answer is required.
-   **Survey**: change the title. **Notes**: parts that were converted with a visible difference.
-5. When the status says **Ready to export**, click **Export .lss** and import it in LimeSurvey:
-   **Create survey > Import**.
+1. **Get your file from Qualtrics.** Open the survey, click **Tools**, then **Import/Export**, then **Export survey**.
+   A file ending in `.qsf` is saved on your computer.
+2. **Open it in the [converter](https://peterslijkhuis.github.io/QualtricsToLimeSurvey/).** Click the box and pick
+   the file, or drag the file onto it.
+3. **Choices.** Some things Qualtrics does have no exact LimeSurvey equivalent. For each one the page explains, in
+   plain words, what Qualtrics does, why you need to choose, and what each option changes for respondents. Pick one
+   for each item, or click **Pick the first option for all**. You can change a choice at any time. If you would
+   rather fix it in Qualtrics, each item also says what to change there.
+4. **Questions.** Switch a question off to leave it out, change its short name (used in your results), or choose
+   whether people must answer it. **Survey** lets you change the title.
+5. **Download for LimeSurvey** turns on when every choice is made. In LimeSurvey choose **Create survey**,
+   **Import**, and pick the downloaded `.lss` file.
+6. **After import.** A to-do list of things to set up yourself in LimeSurvey (with where to click), and a list of
+   things that were changed for you and need nothing from you. Tick each to-do off as you go.
 
 <p align="center">
-  <img src="docs/images/decisions.png" alt="Decisions: pick how each unconvertible part is handled" width="820">
+  <img src="docs/images/decisions.png" alt="Choices: what Qualtrics does, why you need to choose, and the impact of each option" width="820">
+</p>
+
+<p align="center">
+  <img src="docs/images/after-import.png" alt="After import: to-dos for LimeSurvey and changes that need nothing from you" width="820">
 </p>
 
 <p align="center">
@@ -58,7 +69,7 @@ converted fixture into LimeSurvey 6.17 and fails on any import warning or Expres
 (`.github/workflows/test.yml`, using `test/limesurvey/CheckLssCommand.php`).
 
 `convert(qsfTextOrObject, { choices, edits, title })` returns `{ lss, problems, decided, notes, items, stats }`.
-Each problem has an `id` and `options`; pass `choices: { [id]: option.key }` to resolve it. `edits` is
+Each problem has an `id`, `qualtrics` (what Qualtrics does), `why` (why a choice is needed) and `options` (each with a `label` and its `impact`); pass `choices: { [id]: option.key }` to resolve it. `edits` is
 `{ QID: { skip, code, mandatory } }`. `lss` stays empty while unresolved problems remain. It works the same in Node and
 the browser.
 
@@ -103,7 +114,7 @@ the browser.
 | Heat map with regions, highlight (HL) | Array per region or word (note) |
 | Matrix MaxDiff | Array by column, best and worst, with a check that they differ |
 | Meta info, captcha | Removed; LimeSurvey settings named in the note |
-| Signature, drawing, heat map without regions, pick group rank, drill down, tree select, gap analysis, map, screen capture, video, conjoint, matrix profile | **Decision**: replace with file upload (where it fits), long text or text display, or leave out |
+| Signature, drawing, heat map without regions, pick group rank, drill down, tree select, gap analysis, map, screen capture, video, conjoint, matrix profile | **Choice**: replace with file upload (where it fits), long text or text display, or leave out |
 
 ### Behaviour
 
@@ -151,7 +162,7 @@ the browser.
 | `${rand://int/a:b}`, `${date://CurrentDate/...}` | `rand(a, b)`, `date(...)` |
 | `$e{ ... }` math | ExpressionScript arithmetic |
 | `${gr://SC_x/Score}` | The score variable |
-| GeoIP, web service, custom JavaScript, subset question randomization, quotas on other quotas or complex logic | **Decision**, with options and what to change in Qualtrics |
+| GeoIP, web service, custom JavaScript, subset question randomization, quotas on other quotas or complex logic | **Choice**, with options and what to change in Qualtrics |
 
 ## Checked against LimeSurvey
 
