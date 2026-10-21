@@ -17,15 +17,13 @@ const LANGS = {
 const THEMES = {
   S: 'shortfreetext', T: 'longfreetext', U: 'hugefreetext', Q: 'multipleshorttext', N: 'numerical',
   K: 'multiplenumeric', L: 'listradio', '!': 'list_dropdown', M: 'multiplechoice', D: 'date', R: 'ranking',
-  F: 'arrays/array', ';': 'arrays/texts', ':': 'arrays/multiflexi', X: 'boilerplate', '*': 'equation', '|': 'file_upload',
+  F: 'arrays/array', H: 'arrays/column', ';': 'arrays/texts', ':': 'arrays/multiflexi', X: 'boilerplate', '*': 'equation', '|': 'file_upload',
 };
 
 const UNSUPPORTED = {
   SS: 'Use a File upload question where respondents upload a signed form, or a signature plugin.',
   Draw: 'Use a File upload question for the drawing.',
-  HeatMap: 'Use a Multiple choice question that lists the image regions.',
-  HotSpot: 'Use a Multiple choice question that lists the image regions.',
-  HL: 'Use a Multiple choice question that lists the words or phrases to pick.',
+  HeatMap: 'Use a Hot spot question in Qualtrics (regions convert to a multiple choice list), or a Multiple choice question that lists the image regions.',
   PGR: 'Use an Array question with the groups as columns, then a Ranking question per group.',
   DD: 'Use one Dropdown list question per level, filtered with relevance on the previous level.',
   TreeSelect: 'Use one Dropdown list question per level, filtered with relevance on the previous level.',
@@ -58,13 +56,17 @@ class Converter {
     this.ends = []; // conditions that end the survey, in flow order
     this.nextId = 1;
     this.savetimings = false;
+    this.quotas = [];
+    this.scores = {}; // scoring category ID -> { name }
+    this.redirects = []; // { conds, url } in flow order
     for (const el of qsf.SurveyElements) {
       const p = el.Payload;
       if (el.Element === 'SQ') this.questions[p.QuestionID] = p;
       else if (el.Element === 'BL') for (const b of values(p)) this.blocks[b.ID] = b;
       else if (el.Element === 'FL') this.flow = p;
       else if (el.Element === 'SO') this.options = p || {};
-      else if (el.Element === 'QO' && p) this.quotas = values(p.Quotas || p);
+      else if (el.Element === 'QO' && p) this.quotas.push(...(p.Quotas ? values(p.Quotas) : [p]));
+      else if (el.Element === 'SCO' && p) for (const c of values(p.ScoringCategories)) this.scores[c.ID] = { name: c.Name || c.ID };
     }
     this.options = this.options || {};
     const entry = qsf.SurveyEntry || {};
@@ -81,8 +83,10 @@ class Converter {
     this.varGroup = this.newGroup('Variables', [], '');
     this.walk(this.flow ? this.flow.Flow || [] : [], [], '');
     for (const g of this.groups) for (const q of g.questions) this.finishQuestion(q);
+    this.scoreGroup();
     for (const g of this.groups) this.finishGroup(g);
-    if (this.quotas && this.quotas.length) this.problem('Quotas', `The survey has ${this.quotas.length} quota(s); quotas are not converted.`, 'Remove the quotas in Qualtrics before exporting, then recreate them in LimeSurvey under Survey settings > Quotas.');
+    this.quotaRows = this.quotas.map((qo, i) => this.quota(qo, i + 1)).filter(Boolean);
+    this.endUrl();
     this.surveyOptions();
     const groups = this.groups.filter(g => g.questions.length);
     const lss = this.writeLss(groups);
@@ -113,6 +117,15 @@ class Converter {
           this.walk(f.Flow || [], [...conds, { logic: f.BranchLogic, where: `Branch "${strip(f.Description || f.FlowID)}"` }], rgroup);
           break;
         case 'Group':
+          this.walk(f.Flow || [], conds, rgroup);
+          break;
+        case 'Authenticator':
+          this.note(`Authenticator ${f.FlowID}`, 'The authenticator became open access; the blocks inside it are kept.', 'Make the LimeSurvey survey closed-access with a participant list to require a login.');
+          this.walk(f.Flow || [], conds, rgroup);
+          break;
+        case 'TableOfContents':
+          this.questionIndex = true;
+          this.note(`Table of contents ${f.FlowID}`, 'Replaced by the LimeSurvey question index.');
           this.walk(f.Flow || [], conds, rgroup);
           break;
         case 'EmbeddedData':
@@ -157,12 +170,23 @@ class Converter {
   endSurvey(f, conds) {
     const o = f.Options || {};
     if (o.EOSRedirectURL && /^https?:\/\/./.test(o.EOSRedirectURL) && (o.SurveyTermination === 'Redirect' || f.EndingType === 'Redirect')) {
-      if (this.redirect) this.problem(`End of survey ${f.FlowID}`, 'The survey redirects to different URLs depending on the path.', 'LimeSurvey has one end URL per language; use one URL and pass the path as a URL parameter.');
-      this.redirect = o.EOSRedirectURL;
+      this.redirects.push({ conds, url: o.EOSRedirectURL, where: `End of survey ${f.FlowID}` });
     }
     if (o.EOSMessage) this.note(`End of survey ${f.FlowID}`, 'A custom end-of-survey message from the Qualtrics library is not included in the export.', 'Paste the message into Survey text elements > End message in LimeSurvey.');
     if (!conds.length) this.stopped = true;
     else this.ends.push(conds);
+  }
+
+  // One end URL; when ends redirect differently, an expression picks the URL of the path taken.
+  endUrl() {
+    const o = this.options;
+    const fallback = o.SurveyTermination === 'Redirect' && /^https?:\/\/./.test(o.EOSRedirectURL || '') ? o.EOSRedirectURL : '';
+    const rs = this.redirects;
+    if (!rs.length) { this.redirect = fallback; return; }
+    if (rs.length === 1 && !rs[0].conds.length) { this.redirect = rs[0].url; return; }
+    let expr = JSON.stringify(fallback);
+    for (const r of [...rs].reverse()) expr = r.conds.length ? `if(${and(r.conds.map(c => this.cond(c)))}, ${JSON.stringify(r.url)}, ${expr})` : JSON.stringify(r.url);
+    this.redirect = `{${expr}}`;
   }
 
   embedded(ed, conds) {
@@ -172,6 +196,8 @@ class Converter {
     const value = ed.Value;
     const tok = recipient(field);
     if (tok && ed.Type !== 'Custom') return this.assign(v, tok, conds);
+    const meta = { ResponseID: 'SAVEDID', SurveyID: 'SID', StartDate: 'date("Y-m-d H:i:s")', RecordedDate: 'date("Y-m-d H:i:s")', CurrentDate: 'date("Y-m-d")', CurrentTime: 'date("H:i:s")', Q_Language: 'LANG', UserLanguage: 'LANG' }[field];
+    if (meta && ed.Type !== 'Custom') return this.assign(v, meta, conds);
     if (ed.Type === 'SurveyMetaData' || ed.Type === 'Survey') {
       return this.problem(`Embedded data "${field}"`, `Built-in survey field "${field}" has no LimeSurvey equivalent.`, 'Remove it from the flow, or set it with a URL parameter of the same name.');
     }
@@ -327,7 +353,13 @@ class Converter {
     const where = `${p.DataExportTag || qid} (${qid})`;
     const base = (p.DataExportTag || qid) + (it ? `L${it.n}` : '');
     const ctx = { p, where, iter: it, qsfId: qid };
-    if (p.QuestionType === 'Timing') { this.savetimings = true; this.note(where, 'Timing question removed; LimeSurvey records page timings instead (timings are switched on).'); return null; }
+    if (p.QuestionType === 'Timing') {
+      this.savetimings = true;
+      const max = Number((p.Configuration || {}).MaxSeconds) || 0;
+      if (max > 0) { g.timeLimit = max; this.note(where, `Timing question removed; the page moves on automatically after ${max} seconds (LimeSurvey time limit), and page timings are recorded.`); }
+      else this.note(where, 'Timing question removed; LimeSurvey records page timings instead (timings are switched on).');
+      return null;
+    }
     if (p.QuestionType === 'Meta') { this.note(where, 'Meta info question removed.', 'Switch on "Save IP address" and "Save referrer URL" in LimeSurvey if you need them.'); return null; }
     if (p.QuestionType === 'Captcha') { this.captcha = true; this.note(where, 'Captcha question removed; the LimeSurvey survey captcha is switched on instead.'); return null; }
     if (p.QuestionType in UNSUPPORTED) { this.problem(where, `Question type "${p.QuestionType}" has no LimeSurvey equivalent.`, UNSUPPORTED[p.QuestionType]); return null; }
@@ -343,6 +375,10 @@ class Converter {
       this.problem(where, 'The question has custom JavaScript, which uses the Qualtrics JavaScript API and will not run in LimeSurvey.', 'Remove the JavaScript in Qualtrics, then rebuild the behaviour in LimeSurvey with ExpressionScript or the question\'s own script field.');
     }
     this.defaults(q, p);
+    if (p.ChoiceGroups && Object.keys(p.ChoiceGroups).length) this.note(where, 'Choice group headings are dropped; the choices are kept in order.');
+    if (p.Labels && Object.keys(p.Labels).length && q.type === 'K') this.note(where, 'Slider scale labels are dropped.', 'Add them to the question text, or use "left|right" in the subquestion text for end labels.');
+    if (p.Configuration && p.Configuration.NotApplicable) this.note(where, 'The "Not applicable" option of the slider is dropped.');
+    this.scoring(q, p);
     return q;
   }
 
@@ -438,6 +474,35 @@ class Converter {
       if (sel !== 'DND') this.note(q.where, 'Rank order shown as LimeSurvey drag-and-drop ranking.');
       return this.choicesAsAnswers(q, p);
     }
+    if (t === 'HotSpot') {
+      this.note(q.where, 'Hot spot shown as a list of the image regions (the clickable image is not converted).', 'Add the image to the question text in LimeSurvey if respondents need it.');
+      if (sel === 'LikeDislike') {
+        q.type = 'F'; this.choicesAsSub(q, p);
+        q.answers.push({ code: '1', raw: 'Like', id: 'like', scale: 0, kind: 'Answers' }, { code: '2', raw: 'Dislike', id: 'dislike', scale: 0, kind: 'Answers' });
+        q.answerCode = { 1: '1', 2: '2' };
+        return;
+      }
+      q.type = 'M'; return this.choicesAsSub(q, p);
+    }
+    if (t === 'HL') {
+      q.type = 'F'; this.choicesAsSub(q, p); this.answersAsColumns(q, p);
+      this.note(q.where, 'Highlight question shown as an array: one row per word, one column per category.');
+      if (!q.answers.length) this.problem(q.where, 'The highlight categories could not be read.', 'Replace it with a matrix question.');
+      return;
+    }
+    if (t === 'Matrix' && sel === 'MaxDiff') {
+      // Array by column: each column (most / least) picks one item.
+      q.type = 'H';
+      this.answersAsSub(q, p);
+      this.choicesAsAnswers(q, p);
+      if (q.sub.length === 2) {
+        const [a, b] = q.sub.map(x => `${q.code}_${x.code}.NAOK`);
+        q.attrs.em_validation_q = `is_empty(${a}) or ${a} != ${b}`;
+        q.attrs.em_validation_q_tip = 'Pick a different item in each column.';
+      }
+      this.note(q.where, 'MaxDiff shown as an array by column; one question per MaxDiff set is not converted.', 'Duplicate the question in LimeSurvey for each set if your design uses several sets.');
+      return;
+    }
     if (t === 'FileUpload') { q.type = '|'; q.attrs.max_num_of_files = 1; return; }
     this.problem(q.where, `Question type ${t}/${sel}${sub ? '/' + sub : ''} has no LimeSurvey equivalent.`, 'Change it to a standard type (multiple choice, matrix, text entry, slider, rank order) in Qualtrics.');
   }
@@ -532,6 +597,18 @@ class Converter {
       const code = answerCode(recode(p, id), id, used);
       q.answerCode[id] = code;
       q.answers.push({ code, raw: display(a), id, scale: 0, kind: 'Answers' });
+    }
+  }
+
+  answersAsSub(q, p) {
+    q.answerCode = {};
+    const used = new Set();
+    for (const id of order(p.AnswerOrder, p.Answers)) {
+      const a = p.Answers[id];
+      if (!a) continue;
+      const code = subCode(recode(p, id), id, used);
+      q.answerCode[id] = code;
+      q.sub.push({ code, raw: display(a), id, kind: 'Answers' });
     }
   }
 
@@ -754,6 +831,15 @@ class Converter {
     if (it.LogicType === 'PanelData') {
       const tok = recipient(String(it.LeftOperand || '').replace(/^m:\/\//, ''));
       if (tok) return compare(tok, op, this.valueExpr(it.RightOperand ?? '', { where, iter: c.iter }), where, this);
+    }
+    if (it.LogicType === 'DeviceType') {
+      const tag = JSON.stringify(String(it.LeftOperand || '').toLowerCase());
+      const hit = `!is_empty(stristr(${this.deviceVar()}.NAOK, ${tag}))`;
+      return /Not/.test(op) ? `!(${hit})` : hit;
+    }
+    if (it.LogicType === 'ScoringCategory' || /^gr:\/\//.test(it.LeftOperand || '')) {
+      const id = String(it.LeftOperand || '').replace(/^gr:\/\//, '').split('/')[0];
+      if (this.scores[id]) return compare(this.scoreExpr(id), op, this.valueExpr(it.RightOperand ?? '', { where, iter: c.iter }), where, this);
     }
     if (it.LogicType !== 'Question') {
       this.problem(where, `Condition on "${it.LogicType}" (${strip(it.Description || '')}) has no LimeSurvey equivalent.`,
@@ -980,8 +1066,95 @@ class Converter {
         return { expr: this.pathExpr(q, loc, ctx.where) };
       }
     }
+    if ((m = /^gr:\/\/(SC_\w+)\/(Score|WeightedMean|WeightedStdDev)$/.exec(s)) && this.scores[m[1]]) {
+      if (m[2] === 'Score') return { expr: this.scoreExpr(m[1]) };
+    }
     this.problem(ctx.where, `Piped text "\${${s}}" cannot be converted.`, s.startsWith('gr://') ? 'Use LimeSurvey assessments, or compute the score with an equation question.' : 'Remove the piped text, or replace it with an answer or embedded data field.');
     return { literal: '' };
+  }
+
+  // ---------- scoring, device type, quotas ----------
+
+  // Qualtrics scoring: GradingData gives points per choice and scoring category.
+  scoring(q, p) {
+    const gd = values(p.GradingData);
+    for (const g of gd) {
+      for (const [sc, pts] of Object.entries(g.Grades || {})) {
+        if (!this.scores[sc] || pts === '' || pts === null || Number(pts) === 0) continue;
+        (this.scores[sc].terms || (this.scores[sc].terms = [])).push({ q, choice: String(g.ChoiceID), answer: g.AnswerID !== undefined ? String(g.AnswerID) : undefined, pts: Number(pts) });
+      }
+    }
+  }
+
+  scoreExpr(id) {
+    const sc = this.scores[id];
+    const terms = (sc.terms || []).map(t => {
+      let sel;
+      if (t.answer !== undefined && t.q.answerCode) {
+        const rc = t.q.choiceCode[t.choice], ac = t.q.answerCode[t.answer];
+        sel = rc && ac ? `${t.q.code}_${rc}.NAOK == "${ac}"` : '';
+      } else sel = t.q.choiceCode && t.q.choiceCode[t.choice] ? this.selected(t.q, t.choice, t.q.where) : '';
+      return sel ? `if(${sel}, ${t.pts}, 0)` : '';
+    }).filter(Boolean);
+    sc.used = true;
+    return terms.length ? `sum(${terms.join(', ')})` : '0';
+  }
+
+  // Scores are stored at the end, so the response data has them like Qualtrics' SC columns.
+  scoreGroup() {
+    const ids = Object.keys(this.scores).filter(id => (this.scores[id].terms || []).length);
+    if (!ids.length) return;
+    const g = this.newGroup('Scores', [], '');
+    g.ends = [];
+    for (const id of ids) {
+      const q = this.newQuestion(g, `score${this.scores[id].name}`, '*', { where: `Scoring "${this.scores[id].name}"`, hidden: true });
+      q.text[this.lang] = `{${this.scoreExpr(id)}}`;
+    }
+    this.note('Scoring', `Scoring categories (${ids.map(id => this.scores[id].name).join(', ')}) are computed by hidden equation questions at the end of the survey.`);
+  }
+
+  // Device type is read by a small script on the first page into a hidden variable (words like "mobile iphone").
+  deviceVar() {
+    if (this.device) return this.device.code;
+    const g = this.groups.find(x => x.questions.some(q => !q.hidden && q.type !== '*')) || this.groups[this.groups.length - 1];
+    // Not "hidden": LimeSurvey does not render hidden questions, so the script would never run. CSS hides it instead.
+    const q = this.newQuestion(g, 'devicetype', 'S', { where: 'Device type', finished: true });
+    q.attrs.cssclass = 'd-none';
+    g.questions.splice(g.questions.indexOf(q), 1);
+    g.questions.unshift(q);
+    q.text[this.lang] = 'Device type';
+    q.script = "$(function() { var u = navigator.userAgent, t = []; var tablet = /iPad|Tablet/i.test(u) || (/Macintosh/.test(u) && 'ontouchend' in document); var phone = /Mobi|iPhone|iPod|Android.*Mobile/i.test(u); t.push(phone ? 'mobile' : tablet ? 'tablet mobile' : 'desktop computer'); if (/iPhone/.test(u)) t.push('iphone'); if (/iPad/.test(u) || tablet) t.push('ipad'); if (/Android/.test(u)) t.push('android'); if (/Windows Phone/.test(u)) t.push('windowsphone'); if (/BlackBerry/.test(u)) t.push('blackberry'); $('#answer{SGQ}').val(t.join(' ')); });";
+    this.device = q;
+    this.note('Device type', 'Device conditions use a hidden question filled by a script on the first page; they work from the second page on.', 'Keep device conditions off the first page.');
+    return q.code;
+  }
+
+  // Qualtrics quota -> LimeSurvey quota. LimeSurvey quotas count answer codes: AND across questions, OR within one.
+  quota(qo, id) {
+    const name = qo.Name || qo.QuotaName || `Quota ${id}`;
+    const where = `Quota "${name}"`;
+    const limit = Number(qo.Occurrences ?? qo.Quota ?? qo.Limit);
+    const fail = why => { this.problem(where, why, 'Simplify the quota to "question = choice" conditions joined by AND (OR only between choices of the same question), or recreate it in LimeSurvey under Survey settings > Quotas.'); return null; };
+    if (!Number.isFinite(limit)) return fail('The quota limit could not be read.');
+    const logic = qo.Logic || qo.Condition;
+    const items = [];
+    for (const k of numKeys(logic || {})) for (const j of numKeys(logic[k])) items.push(logic[k][j]);
+    if (!items.length) return fail('The quota has no conditions that could be read.');
+    const members = [];
+    let prev;
+    for (const [i, it] of items.entries()) {
+      const loc = parseLoc(it.LeftOperand || it.ChoiceLocator || '');
+      const q = loc && this.ref(loc.qid);
+      if (!q || it.Operator !== 'Selected' || loc.path !== 'SelectableChoice' || !['L', '!', 'M'].includes(q.type)) return fail('Only "choice is selected" conditions on multiple choice questions can become a LimeSurvey quota.');
+      const conj = it.Conjuction || it.Conjunction;
+      if (i > 0 && (conj === 'Or') !== (prev === q)) return fail('The quota mixes AND and OR in a way LimeSurvey quotas cannot express.');
+      prev = q;
+      members.push({ qid: q.qid, code: q.choiceCode[loc.ids[0]] });
+    }
+    const action = /End/i.test(qo.QuotaAction || qo.Action || 'EndCurrentSurvey') ? 1 : null;
+    if (!action) return fail(`Quota action "${qo.QuotaAction}" cannot be converted.`);
+    if (qo.LogicType && qo.LogicType !== 'Simple') this.note(where, `Quota type "${qo.LogicType}" was converted as a simple quota.`);
+    return { id, name, limit, members, message: strip((qo.EndSurveyOptions || {}).Message || '') };
   }
 
   // ---------- survey settings and output ----------
@@ -1000,10 +1173,12 @@ class Converter {
     let l10nId = 1, aid = 1, dvid = 1;
     groups.forEach((g, gi) => {
       g.order = gi;
+      const timed = g.timeLimit && g.questions.find(q => !q.hidden);
+      if (timed) Object.assign(timed.attrs, { time_limit: g.timeLimit, time_limit_action: 2 });
       g.questions.forEach((q, qi) => {
         if (q.hidden) q.attrs.hidden = 1;
         qs.push(qRow(this.sid, g.gid, q, qi, 0, 0, q.relevance || '1'));
-        for (const lg of L) l10n.push({ id: l10nId++, qid: q.qid, question: q.text[lg] ?? q.text[this.lang] ?? '', help: '', language: lg, script: '' });
+        for (const lg of L) l10n.push({ id: l10nId++, qid: q.qid, question: q.text[lg] ?? q.text[this.lang] ?? '', help: '', language: lg, script: q.script || '' });
         for (const [k, v] of Object.entries(q.attrs)) {
           if (v === undefined || v === null || v === '') continue;
           if (typeof v === 'object') for (const lg of L) attrs.push({ qid: q.qid, attribute: k, value: v[lg] ?? v[this.lang] ?? '', language: lg });
@@ -1036,7 +1211,8 @@ class Converter {
       savetimings: this.savetimings ? 'Y' : 'N', template: 'fruity_twentythree', language: this.lang, additional_languages: L.slice(1).join(' '),
       datestamp: 'Y', usecookie: o.BallotBoxStuffingPrevention === 'true' ? 'Y' : 'N', allowprev: o.BackButton === 'true' ? 'Y' : 'N',
       autoredirect: this.redirect ? 'Y' : 'N', showprogress: o.ProgressBarDisplay && o.ProgressBarDisplay !== 'None' ? 'Y' : 'N',
-      usecaptcha: this.captcha ? 'A' : 'N', allowsave: o.SaveAndContinue === 'true' ? 'Y' : 'N', showwelcome: 'N', questionindex: 0,
+      usecaptcha: this.captcha ? 'A' : 'N', allowsave: o.SaveAndContinue === 'true' ? 'Y' : 'N', showwelcome: 'N', questionindex: this.questionIndex ? 1 : 0,
+      printanswers: o.ResponseSummary && o.ResponseSummary !== 'No' ? 'Y' : 'N',
       showxquestions: 'N', showgroupinfo: 'N', shownoanswer: 'N', showqnumcode: o.ShowExportTags === 'true' ? 'C' : 'X',
     };
     const lsets = L.map(lg => ({
@@ -1050,7 +1226,11 @@ class Converter {
       ` <languages>\n${L.map(l => `  <language>${l}</language>\n`).join('')} </languages>\n` +
       table('answers', answers) + table('answer_l10ns', al10n) + table('groups', grp) + table('group_l10ns', gl10n) +
       table('questions', qs) + table('subquestions', subs) + table('question_l10ns', l10n) + table('question_attributes', attrs) + table('defaultvalues', defs) + table('defaultvalue_l10ns', dl10n) +
-      table('surveys', [survey]) + table('surveys_languagesettings', lsets) + table('survey_url_parameters', params) + '</document>\n';
+      table('surveys', [survey]) + table('surveys_languagesettings', lsets) + table('survey_url_parameters', params) +
+      table('quota', (this.quotaRows || []).map(r => ({ id: r.id, sid: this.sid, name: r.name, qlimit: r.limit, action: 1, active: 1, autoload_url: 0 }))) +
+      table('quota_members', (this.quotaRows || []).flatMap(r => r.members.map((m, i) => ({ id: r.id * 1000 + i, sid: this.sid, qid: m.qid, quota_id: r.id, code: m.code })))) +
+      table('quota_languagesettings', (this.quotaRows || []).flatMap(r => L.map((lg, i) => ({ quotals_id: r.id * 100 + i, quotals_quota_id: r.id, quotals_language: lg, quotals_name: r.name, quotals_message: r.message || 'Sorry, your responses have exceeded a quota on this survey.', quotals_url: '', quotals_urldescrip: '' })))) +
+      '</document>\n';
   }
 }
 

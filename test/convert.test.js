@@ -38,6 +38,14 @@ test('kitchen sink converts every behaviour without problems', () => {
   has(lss, '<value><![CDATA[!is_empty(stristr(code.NAOK, "x"))]]></value>');
   has(lss, 'Houdt u van fruit?');
   has(lss, '<defaultvalue><![CDATA[abc]]></defaultvalue>');
+  // scoring, device type, quotas, end URL per path, timing, extra question types
+  has(lss, 'Fruit score {sum(if(likes.NAOK == "1", 2, 0), if(fruits_1.NAOK == "Y", 1, 0), if(fruits_3.NAOK == "Y", 5, 0))}');
+  has(lss, '!is_empty(stristr(devicetype.NAOK, "mobile"))');
+  has(lss, '<quota_members>');
+  has(lss, '{if(why.NAOK == "stop", "https://example.org/stopped", "https://example.org/done")}');
+  has(lss, '<attribute><![CDATA[time_limit]]></attribute>');
+  has(lss, '<type><![CDATA[H]]></type>');
+  has(lss, '{ResponseID = SAVEDID}');
 });
 
 test('unconvertible parts are listed with a fix and block the output', () => {
@@ -45,7 +53,7 @@ test('unconvertible parts are listed with a fix and block the output', () => {
     SurveyEntry: { SurveyName: 'x', SurveyLanguage: 'EN' },
     SurveyElements: [
       { Element: 'BL', Payload: [{ Type: 'Standard', ID: 'BL_1', Description: 'B', BlockElements: [{ Type: 'Question', QuestionID: 'QID1' }] }] },
-      { Element: 'FL', Payload: { Type: 'Root', Flow: [{ Type: 'Branch', FlowID: 'FL_2', BranchLogic: { 0: { 0: { LogicType: 'DeviceType', Operator: 'Is', LeftOperand: 'mobile', Type: 'Expression' }, Type: 'If' }, Type: 'BooleanExpression' }, Flow: [{ Type: 'Standard', ID: 'BL_1' }] }] } },
+      { Element: 'FL', Payload: { Type: 'Root', Flow: [{ Type: 'Branch', FlowID: 'FL_2', BranchLogic: { 0: { 0: { LogicType: 'GeoIP', Operator: 'Is', LeftOperand: 'NL', Type: 'Expression' }, Type: 'If' }, Type: 'BooleanExpression' }, Flow: [{ Type: 'Standard', ID: 'BL_1' }] }] } },
       { Element: 'SQ', Payload: { QuestionID: 'QID1', DataExportTag: 'Q1', QuestionType: 'MC', Selector: 'SAVR', QuestionText: 'Hi', Choices: { 1: { Display: 'a' } }, QuestionJS: 'Qualtrics.SurveyEngine.addOnload(function(){ this.hideNextButton(); });' } },
     ],
   });

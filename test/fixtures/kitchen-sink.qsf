@@ -214,6 +214,33 @@
      ]
     },
     {
+     "Type": "Standard",
+     "Description": "Extra types",
+     "ID": "BL_X",
+     "BlockElements": [
+      {
+       "Type": "Question",
+       "QuestionID": "QID26"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID23"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID24"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID25"
+      },
+      {
+       "Type": "Question",
+       "QuestionID": "QID27"
+      }
+     ]
+    },
+    {
      "Type": "Trash",
      "Description": "Trash / Unused Questions",
      "ID": "BL_T"
@@ -288,7 +315,13 @@
       "Flow": [
        {
         "Type": "EndSurvey",
-        "FlowID": "FL_5"
+        "FlowID": "FL_5",
+        "EndingType": "Advanced",
+        "Options": {
+         "Advanced": "true",
+         "SurveyTermination": "Redirect",
+         "EOSRedirectURL": "https://example.org/stopped"
+        }
        }
       ],
       "FlowID": "FL_4"
@@ -417,12 +450,60 @@
      },
      {
       "Type": "Standard",
+      "ID": "BL_X",
+      "FlowID": "FL_90"
+     },
+     {
+      "Type": "Branch",
+      "FlowID": "FL_91",
+      "Description": "High fruit score",
+      "BranchLogic": {
+       "0": {
+        "0": {
+         "LogicType": "ScoringCategory",
+         "LeftOperand": "SC_fruit",
+         "Operator": "GreaterThanOrEqual",
+         "RightOperand": "5",
+         "Type": "Expression"
+        },
+        "Type": "If"
+       },
+       "Type": "BooleanExpression"
+      },
+      "Flow": [
+       {
+        "Type": "EmbeddedData",
+        "FlowID": "FL_92",
+        "EmbeddedData": [
+         {
+          "Description": "fan",
+          "Type": "Custom",
+          "Field": "fan",
+          "Value": "yes"
+         },
+         {
+          "Description": "ResponseID",
+          "Type": "SurveyMetaData",
+          "Field": "ResponseID"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "Type": "Standard",
       "ID": "BL_I",
       "FlowID": "FL_20"
      },
      {
       "Type": "EndSurvey",
-      "FlowID": "FL_21"
+      "FlowID": "FL_21",
+      "EndingType": "Advanced",
+      "Options": {
+       "Advanced": "true",
+       "SurveyTermination": "Redirect",
+       "EOSRedirectURL": "https://example.org/done"
+      }
      }
     ],
     "Properties": {
@@ -498,7 +579,23 @@
       "Display": "Something else",
       "TextEntry": "true"
      }
-    }
+    },
+    "GradingData": [
+     {
+      "ChoiceID": "1",
+      "Grades": {
+       "SC_fruit": "2"
+      },
+      "index": 0
+     },
+     {
+      "ChoiceID": "2",
+      "Grades": {
+       "SC_fruit": "0"
+      },
+      "index": 1
+     }
+    ]
    }
   },
   {
@@ -565,7 +662,21 @@
      "Advanced": null,
      "Type": "All",
      "TotalRandSubset": ""
-    }
+    },
+    "GradingData": [
+     {
+      "ChoiceID": "1",
+      "Grades": {
+       "SC_fruit": "1"
+      }
+     },
+     {
+      "ChoiceID": "3",
+      "Grades": {
+       "SC_fruit": "5"
+      }
+     }
+    ]
    }
   },
   {
@@ -1223,7 +1334,7 @@
    "Element": "SQ",
    "PrimaryAttribute": "QID21",
    "Payload": {
-    "QuestionText": "Any final comments? (condition ${e://Field/cond}, score ${e://Field/score})",
+    "QuestionText": "Any final comments? (condition ${e://Field/cond}, score ${e://Field/score}) Fruit score ${gr://SC_fruit/Score}.",
     "DataExportTag": "final",
     "QuestionType": "TE",
     "Selector": "ML",
@@ -1303,6 +1414,232 @@
       "Selected": true
      }
     }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID23",
+   "Payload": {
+    "QuestionText": "Most and least important?",
+    "DataExportTag": "maxdiff",
+    "QuestionType": "Matrix",
+    "Selector": "MaxDiff",
+    "Configuration": {},
+    "QuestionDescription": "Most and least important?",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID23",
+    "ChoiceOrder": [
+     "1",
+     "2",
+     "3"
+    ],
+    "AnswerOrder": [
+     "1",
+     "2"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "Price"
+     },
+     "2": {
+      "Display": "Taste"
+     },
+     "3": {
+      "Display": "Health"
+     }
+    },
+    "Answers": {
+     "1": {
+      "Display": "Most"
+     },
+     "2": {
+      "Display": "Least"
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID24",
+   "Payload": {
+    "QuestionText": "Click the parts you like",
+    "DataExportTag": "hotspot",
+    "QuestionType": "HotSpot",
+    "Selector": "OnOff",
+    "Configuration": {},
+    "QuestionDescription": "Click the parts you like",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID24",
+    "ChoiceOrder": [
+     "1",
+     "2"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "Top"
+     },
+     "2": {
+      "Display": "Bottom"
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID25",
+   "Payload": {
+    "QuestionText": "Highlight words",
+    "DataExportTag": "highlight",
+    "QuestionType": "HL",
+    "Selector": "Text",
+    "Configuration": {},
+    "QuestionDescription": "Highlight words",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID25",
+    "ChoiceOrder": [
+     "1",
+     "2"
+    ],
+    "AnswerOrder": [
+     "1",
+     "2"
+    ],
+    "Choices": {
+     "1": {
+      "Display": "sweet"
+     },
+     "2": {
+      "Display": "juicy"
+     }
+    },
+    "Answers": {
+     "1": {
+      "Display": "Like"
+     },
+     "2": {
+      "Display": "Dislike"
+     }
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID26",
+   "Payload": {
+    "QuestionText": "Timer",
+    "DataExportTag": "timer",
+    "QuestionType": "Timing",
+    "Selector": "PageTimer",
+    "Configuration": {
+     "MinSeconds": "0",
+     "MaxSeconds": "30",
+     "CountDirection": "CountUp"
+    },
+    "QuestionDescription": "Timer",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID26"
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SQ",
+   "PrimaryAttribute": "QID27",
+   "Payload": {
+    "QuestionText": "Only on phones",
+    "DataExportTag": "mobileq",
+    "QuestionType": "DB",
+    "Selector": "TB",
+    "Configuration": {},
+    "QuestionDescription": "Only on phones",
+    "Validation": {
+     "Settings": {
+      "ForceResponse": "OFF",
+      "Type": "None"
+     }
+    },
+    "Language": [],
+    "QuestionID": "QID27",
+    "DisplayLogic": {
+     "0": {
+      "0": {
+       "LogicType": "DeviceType",
+       "Operator": "Is",
+       "LeftOperand": "mobile",
+       "Type": "Expression"
+      },
+      "Type": "If"
+     },
+     "Type": "BooleanExpression"
+    }
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "SCO",
+   "PrimaryAttribute": "Scoring",
+   "Payload": {
+    "ScoringCategories": [
+     {
+      "ID": "SC_fruit",
+      "Name": "Fruit",
+      "Description": ""
+     }
+    ],
+    "GradingScales": [],
+    "DefaultScoringCategory": "SC_fruit"
+   }
+  },
+  {
+   "SurveyID": "SV_kitchen",
+   "Element": "QO",
+   "PrimaryAttribute": "QO_1",
+   "Payload": {
+    "Name": "Fruit lovers",
+    "Occurrences": 100,
+    "Logic": {
+     "0": {
+      "0": {
+       "LogicType": "Question",
+       "QuestionID": "QID1",
+       "Operator": "Selected",
+       "LeftOperand": "q://QID1/SelectableChoice/1",
+       "Type": "Expression"
+      },
+      "Type": "If"
+     },
+     "Type": "BooleanExpression"
+    },
+    "LogicType": "Simple",
+    "QuotaAction": "EndCurrentSurvey",
+    "QuotaID": "QO_1"
    }
   }
  ]

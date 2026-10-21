@@ -2,7 +2,7 @@
 
 Converts a Qualtrics survey export (`.qsf`) into a LimeSurvey survey structure (`.lss`), behaviour included:
 display logic, skip logic, survey flow branches, end-of-survey elements, randomizers, embedded data,
-piped text, loop & merge, carry forward, validation, default answers and translations.
+piped text, loop & merge, carry forward, validation, default answers, scoring, quotas and translations.
 
 It runs entirely in the browser (GitHub Pages), so survey files never leave the user's computer.
 
@@ -42,7 +42,7 @@ python3 -m http.server   # then open http://localhost:8000
 | Question export tag (`DataExportTag`) | Question code (letters and digits only, made unique) |
 | Recode values | Answer and subquestion codes, so data keeps the same codes |
 | Survey languages | Survey languages, with question, choice and answer translations |
-| Back button, progress bar, save and continue, anonymize, ballot-box stuffing | Matching survey settings |
+| Back button, progress bar, save and continue, anonymize, ballot-box stuffing, response summary, table of contents | Matching survey settings |
 
 ### Question types
 
@@ -67,9 +67,12 @@ python3 -m http.server   # then open http://localhost:8000
 | Constant sum | Multiple numerical (K) with "total must equal" |
 | Rank order | Ranking (R) |
 | File upload | File upload (\|) |
-| Timing | Removed; LimeSurvey page timings are switched on (note) |
+| Timing | Removed; LimeSurvey page timings are switched on (note). A maximum time becomes a page time limit that moves on |
+| Hot spot | Multiple choice (on/off regions) or Array like/dislike (note: the image is not clickable) |
+| Heat map with regions, highlight (HL) | Array per region or word (note) |
+| Matrix MaxDiff | Array by column, best and worst, with a check that they differ |
 | Meta info, captcha | Removed; LimeSurvey settings named in the note |
-| Signature, drawing, heat map, hot spot, highlight, pick group rank, drill down, gap analysis, matrix profile/MaxDiff, conjoint | **Problem**, with an alternative question type to use |
+| Signature, drawing, heat map without regions, pick group rank, drill down, tree select, gap analysis, map, screen capture, video, conjoint, matrix profile | **Problem**, with an alternative question type to use |
 
 ### Behaviour
 
@@ -96,7 +99,12 @@ python3 -m http.server   # then open http://localhost:8000
 | Min/max choices, character limits, email/phone/zip/number/date/text-only validation | Min/max answers, max characters, regular expressions, number limits |
 | Custom validation | `em_validation_q` with its message |
 | Default choices | Default answers |
-| End of survey redirect | End URL with automatic redirect |
+| End of survey redirect | End URL with automatic redirect; different redirects per path become one conditional URL |
+| Quotas (question = choice, AND across questions, OR within one) | LimeSurvey quotas with the same limit and end action |
+| Scoring categories and per-choice points | Hidden score variables summed at the end; `${gr://...}` and branches on a score work |
+| Device type condition | Hidden device variable filled from the browser |
+| Embedded fields ResponseID, SurveyID, dates, language | `SAVEDID`, `SID`, `date()`, `LANG` |
+| Authenticator | Blocks kept, survey left open (note: switch on a participant list to require login) |
 | Panel fields (first name, last name, email, external reference) | Participant fields `TOKEN:FIRSTNAME` etc. (note: add a participant list) |
 
 ### Piped text
@@ -111,7 +119,8 @@ python3 -m http.server   # then open http://localhost:8000
 | `${lm://Field/n}`, `${lm://CurrentLoopNumber}` | Filled in per loop iteration |
 | `${rand://int/a:b}`, `${date://CurrentDate/...}` | `rand(a, b)`, `date(...)` |
 | `$e{ ... }` math | ExpressionScript arithmetic |
-| Scoring (`${gr://...}`), GeoIP, device type, quotas, web service, authenticator, custom JavaScript | **Problem**, with what to change |
+| `${gr://SC_x/Score}` | The score variable |
+| GeoIP, web service, custom JavaScript, subset question randomization, quotas on other quotas or complex logic | **Problem**, with what to change |
 
 ## Checked against LimeSurvey
 
